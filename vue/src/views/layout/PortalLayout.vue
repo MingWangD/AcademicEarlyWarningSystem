@@ -2,6 +2,7 @@
   <div>
     <div class="topbar">
       <div class="brand">学业预警系统</div>
+      <div class="actions">
       <div>
         <el-tag type="primary" style="margin-right: 12px">{{ user.role }}</el-tag>
         <el-button link @click="logout">退出登录</el-button>
@@ -45,6 +46,15 @@ const logout = () => {
 .topbar{height:56px;background:#1f2937;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
 .brand{font-size:18px;font-weight:700}
 .main{display:flex;min-height:calc(100vh - 56px)}
+.sidebar{width:220px;border-right:1px solid #eee;background: #fff}
+.content{flex:1;padding:16px;background:#f5f7fb;overflow:auto}
+.actions{display:flex;align-items:center}
+
+@media (max-width: 900px) {
+  .main {flex-direction: column}
+  .sidebar {width: 100%; border-right: none; border-bottom: 1px solid #eee}
+  .content {padding: 10px}
+}
 .sidebar{width:220px;border-right:1px solid #eee}
 .content{flex:1;padding:16px;background:#f5f7fb}
 </style>

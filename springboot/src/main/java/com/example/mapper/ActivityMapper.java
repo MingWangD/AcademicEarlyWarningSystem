@@ -20,6 +20,42 @@ public interface ActivityMapper {
     @Select("select u.id as studentId,u.name as studentName,ifnull(a.login_count,0) as loginCount,ifnull(a.video_minutes,0) as videoMinutes,ifnull(a.homework_submitted,0) as homeworkSubmitted,ifnull(a.avg_score,0) as avgScore from user u left join student_daily_activity a on u.id=a.student_id and a.activity_date=#{date} where u.role='STUDENT'")
     List<Map<String,Object>> activitySummary(LocalDate date);
 
+    @Select("""
+            select u.id as studentId,
+                   ifnull(a.login_count,0) as loginCount,
+                   ifnull(a.video_minutes,0) as videoMinutes,
+                   ifnull(a.homework_submitted,0) as homeworkSubmitted,
+                   ifnull(a.avg_score,0) as avgScore,
+                   ifnull(ex.exam_count,0) as examCount,
+                   ifnull(ex.pass_count,0) as examPassCount,
+                   ifnull(vw.watch_time,0) as rawWatchSeconds
+            from user u
+            left join student_daily_activity a on u.id = a.student_id and a.activity_date = #{date}
+            left join (
+               select student_id, count(1) as exam_count, sum(case when is_passed=1 then 1 else 0 end) as pass_count
+               from exam_submission where date(submitted_at)=#{date} group by student_id
+            ) ex on u.id = ex.student_id
+            left join (
+               select student_id, sum(watch_time) as watch_time
+               from video_watch_record where date(last_watched_at)=#{date} group by student_id
+            ) vw on u.id = vw.student_id
+            where u.role='STUDENT'
+            """)
+    List<Map<String, Object>> featureRowsByDate(LocalDate date);
+
+    @Select("""
+            select student_id as studentId,
+                   login_count as loginCount,
+                   video_minutes as videoMinutes,
+                   homework_submitted as homeworkSubmitted,
+                   avg_score as avgScore
+            from student_daily_activity
+            where activity_date between #{startDate} and #{endDate}
+            """)
+    List<Map<String, Object>> historicalFeatures(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Insert("insert into risk_record(student_id,calc_date,risk_score,risk_level,detail_json) values(#{studentId},#{date},#{riskScore},#{riskLevel},#{detailJson})")
+    int saveRiskRecord(@Param("studentId") Long studentId, @Param("date") LocalDate date, @Param("riskScore") double riskScore, @Param("riskLevel") String riskLevel, @Param("detailJson") String detailJson);
     @Insert("insert into risk_record(student_id,calc_date,risk_score,risk_level) values(#{studentId},#{date},#{riskScore},#{riskLevel})")
     int saveRiskRecord(@Param("studentId") Long studentId, @Param("date") LocalDate date, @Param("riskScore") double riskScore, @Param("riskLevel") String riskLevel);
 
