@@ -56,8 +56,6 @@ public interface ActivityMapper {
 
     @Insert("insert into risk_record(student_id,calc_date,risk_score,risk_level,detail_json) values(#{studentId},#{date},#{riskScore},#{riskLevel},#{detailJson})")
     int saveRiskRecord(@Param("studentId") Long studentId, @Param("date") LocalDate date, @Param("riskScore") double riskScore, @Param("riskLevel") String riskLevel, @Param("detailJson") String detailJson);
-    @Insert("insert into risk_record(student_id,calc_date,risk_score,risk_level) values(#{studentId},#{date},#{riskScore},#{riskLevel})")
-    int saveRiskRecord(@Param("studentId") Long studentId, @Param("date") LocalDate date, @Param("riskScore") double riskScore, @Param("riskLevel") String riskLevel);
 
     @Select("select risk_level as riskLevel,count(*) as count from user where role='STUDENT' group by risk_level")
     List<Map<String,Object>> riskDistribution();

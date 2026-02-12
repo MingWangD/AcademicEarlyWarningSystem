@@ -2,8 +2,6 @@
   <el-row :gutter="12">
     <el-col :xs="24" :sm="8"><el-card><template #header>全校用户数</template><div class="big">{{ data.totalUsers || 0 }}</div></el-card></el-col>
     <el-col :xs="24" :sm="16"><el-card><template #header>风险分布</template><el-table :data="data.riskDistribution || []"><el-table-column prop="riskLevel" label="等级"/><el-table-column prop="count" label="人数"/></el-table></el-card></el-col>
-    <el-col :span="8"><el-card><template #header>全校用户数</template><div>{{ data.totalUsers || 0 }}</div></el-card></el-col>
-    <el-col :span="16"><el-card><template #header>风险分布</template><el-table :data="data.riskDistribution || []"><el-table-column prop="riskLevel" label="等级"/><el-table-column prop="count" label="人数"/></el-table></el-card></el-col>
   </el-row>
   <el-card style="margin-top:12px">
     <template #header>风险趋势</template>
