@@ -8,8 +8,6 @@ import com.example.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class StudentService {
@@ -27,9 +25,13 @@ public class StudentService {
         return userMapper.findById(studentId);
     }
 
+    /**
+     * 学生任务列表：返回 task 基本信息 + 当前学生的完成状态
+     */
     public List<Map<String, Object>> getTasks(Long studentId) {
         List<Task> tasks = taskMapper.findAll();
         List<Map<String, Object>> result = new ArrayList<>();
+
         for (Task task : tasks) {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("taskId", task.getId());
@@ -45,13 +47,17 @@ public class StudentService {
 
     private String taskStatus(Long studentId, Task task) {
         return switch (task.getType()) {
-            case "homework" -> activityMapper.countHomeworkSubmitted(task.getId(), studentId) > 0 ? "已提交" : "待完成";
-            case "video" -> Optional.ofNullable(activityMapper.videoWatchTime(task.getId(), studentId)).orElse(0) >= 300 ? "已完成" : "待观看";
-            case "exam" -> activityMapper.countExamSubmitted(task.getId(), studentId) > 0 ? "已完成" : "待考试";
+            case "homework" ->
+                    activityMapper.countHomeworkSubmitted(task.getId(), studentId) > 0 ? "已提交" : "待完成";
+            case "video" -> {
+                Integer watched = activityMapper.videoWatchTime(task.getId(), studentId);
+                int seconds = watched == null ? 0 : watched;
+                yield seconds >= 300 ? "已完成" : "待观看"; // 这里用 300 秒作为完成阈值（你原逻辑）
+            }
+            case "exam" ->
+                    activityMapper.countExamSubmitted(task.getId(), studentId) > 0 ? "已完成" : "待考试";
             default -> "待完成";
         };
-    public Object getTasks() {
-        return taskMapper.findAll();
     }
 
     public Map<String, Boolean> submitHomework(Long studentId, Long homeworkId, String content) {
@@ -69,11 +75,15 @@ public class StudentService {
         if (task == null) {
             throw new IllegalArgumentException("考试任务不存在");
         }
+
+        // 确保 exam 表里有这条考试（你 mapper 里需要有 ensureExamExists 方法）
         activityMapper.ensureExamExists(examId, task.getCourseId(), task.getTitle());
 
         int score = Math.min(100, 60 + (answersJson == null ? 0 : answersJson.length() % 40));
         boolean isPassed = score >= 60;
+
         activityMapper.submitExam(examId, studentId, answersJson, score, isPassed);
+
         Map<String, Object> result = new HashMap<>();
         result.put("score", score);
         result.put("isPassed", isPassed);

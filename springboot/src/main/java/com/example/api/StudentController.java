@@ -28,7 +28,6 @@ public class StudentController {
         Long uid = extractUid(auth);
         return ApiResponse.ok(studentService.getTasks(uid));
     }
-    public ApiResponse<?> tasks() { return ApiResponse.ok(studentService.getTasks()); }
 
     @PostMapping("/homework/submit")
     public ApiResponse<?> homework(Authentication auth, @RequestBody StudentRequests.HomeworkSubmitRequest request) {
@@ -45,8 +44,12 @@ public class StudentController {
     @PostMapping("/exam/submit")
     public ApiResponse<?> exam(Authentication auth, @RequestBody StudentRequests.ExamSubmitRequest request) {
         Long uid = extractUid(auth);
-        return ApiResponse.ok(studentService.submitExam(uid, request.getExamId(), request.getAnswers() == null ? "{}" : request.getAnswers().toString()));
+        return ApiResponse.ok(
+                studentService.submitExam(uid, request.getExamId(),
+                        request.getAnswers() == null ? "{}" : request.getAnswers().toString())
+        );
     }
+
     private Long extractUid(Authentication auth) {
         Object details = auth.getDetails();
         if (details instanceof io.jsonwebtoken.Claims claims) {
@@ -54,5 +57,4 @@ public class StudentController {
         }
         return 1L;
     }
-
 }
