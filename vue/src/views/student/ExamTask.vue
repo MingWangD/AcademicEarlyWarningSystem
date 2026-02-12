@@ -23,5 +23,5 @@ const taskId = Number(route.params.taskId)
 const questions = ref([])
 const answers = reactive({})
 onMounted(()=>request.get(`/api/v1/student/exam/${taskId}/questions`).then(res=>questions.value=res.data||[]))
-const submit = () => request.post('/api/v1/student/exam/submit', {taskId, answers}).then(res => {ElMessage.success(`考试提交成功，得分 ${res.data.score}`); router.push('/portal/student/tasks')})
+const submit = () => request.post('/api/v1/student/exam/submit', {taskId, answers}).then(res => {ElMessage.success(`考试提交成功，得分 ${res.data.score}，最新风险等级 ${res.data.riskLevel || 'LOW'}`); router.push('/portal/student/tasks')})
 </script>

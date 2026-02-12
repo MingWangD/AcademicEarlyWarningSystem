@@ -83,6 +83,42 @@ public interface ActivityMapper {
     @Select("select risk_level as riskLevel,count(*) as count from user where role='STUDENT' group by risk_level")
     List<Map<String,Object>> riskDistribution();
 
+    @Select("""
+            select u.id as studentId,
+                   ifnull(a.login_count,0) as loginCount,
+                   ifnull(a.video_minutes,0) as videoMinutes,
+                   ifnull(a.homework_submitted,0) as homeworkSubmitted,
+                   ifnull(a.avg_score,0) as avgScore,
+                   ifnull(ex.exam_count,0) as examCount,
+                   ifnull(ex.pass_count,0) as examPassCount,
+                   ifnull(vw.watch_time,0) as rawWatchSeconds
+            from user u
+            left join student_daily_activity a on u.id = a.student_id and a.activity_date = #{date}
+            left join (
+               select student_id, count(1) as exam_count, sum(case when is_passed=1 then 1 else 0 end) as pass_count
+               from exam_submission where date(submitted_at)=#{date} group by student_id
+            ) ex on u.id = ex.student_id
+            left join (
+               select student_id, sum(watch_time) as watch_time
+               from video_watch_record where date(last_watched_at)=#{date} group by student_id
+            ) vw on u.id = vw.student_id
+            where u.id=#{studentId} and u.role='STUDENT'
+            limit 1
+            """)
+    Map<String, Object> studentFeatureByDate(@Param("studentId") Long studentId, @Param("date") LocalDate date);
+
+    @Select("""
+            select rr.risk_level as riskLevel, count(1) as count
+            from risk_record rr
+            join (
+              select student_id, max(calc_date) as latest_date
+              from risk_record
+              group by student_id
+            ) latest on rr.student_id = latest.student_id and rr.calc_date = latest.latest_date
+            group by rr.risk_level
+            """)
+    List<Map<String,Object>> latestRiskDistribution();
+
     @Select("select calc_date as date, avg(risk_score) as avgRiskScore from risk_record group by calc_date order by calc_date desc limit 7")
     List<Map<String,Object>> riskTrend();
 

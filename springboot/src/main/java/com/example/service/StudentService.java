@@ -4,6 +4,7 @@ import cn.hutool.json.JSONUtil;
 import com.example.entity.AppUser;
 import com.example.entity.Question;
 import com.example.entity.Task;
+import com.example.enums.RiskLevel;
 import com.example.mapper.ActivityMapper;
 import com.example.mapper.QuestionMapper;
 import com.example.mapper.TaskMapper;
@@ -18,12 +19,14 @@ public class StudentService {
     private final TaskMapper taskMapper;
     private final ActivityMapper activityMapper;
     private final QuestionMapper questionMapper;
+    private final RiskAnalysisService riskAnalysisService;
 
-    public StudentService(UserMapper userMapper, TaskMapper taskMapper, ActivityMapper activityMapper, QuestionMapper questionMapper) {
+    public StudentService(UserMapper userMapper, TaskMapper taskMapper, ActivityMapper activityMapper, QuestionMapper questionMapper, RiskAnalysisService riskAnalysisService) {
         this.userMapper = userMapper;
         this.taskMapper = taskMapper;
         this.activityMapper = activityMapper;
         this.questionMapper = questionMapper;
+        this.riskAnalysisService = riskAnalysisService;
     }
 
     public AppUser getInfo(Long studentId) {
@@ -75,7 +78,14 @@ public class StudentService {
         int score = scoreByAnswers(taskId, answers, 5);
         activityMapper.submitHomework(taskId, studentId, JSONUtil.toJsonStr(answers), score);
         activityMapper.upsertDailyHomework(studentId, score);
-        return Map.of("success", true, "score", score, "isPassed", score >= 60);
+        RiskAnalysisService.RiskResult riskResult = refreshRiskLevel(studentId);
+        return Map.of(
+                "success", true,
+                "score", score,
+                "isPassed", score >= 60,
+                "riskLevel", riskResult.level().name(),
+                "riskScore", riskResult.score()
+        );
     }
 
     public Map<String, Boolean> watchVideo(Long studentId, Long videoId, Integer watchTime) {
@@ -94,7 +104,26 @@ public class StudentService {
         boolean isPassed = score >= 60;
         activityMapper.submitExam(taskId, studentId, JSONUtil.toJsonStr(answers), score, isPassed);
         activityMapper.upsertDailyExam(studentId, score);
-        return Map.of("success", true, "score", score, "isPassed", isPassed);
+        RiskAnalysisService.RiskResult riskResult = refreshRiskLevel(studentId);
+        return Map.of(
+                "success", true,
+                "score", score,
+                "isPassed", isPassed,
+                "riskLevel", riskResult.level().name(),
+                "riskScore", riskResult.score()
+        );
+    }
+
+    private RiskAnalysisService.RiskResult refreshRiskLevel(Long studentId) {
+        Map<String, Object> features = activityMapper.studentFeatureByDate(studentId, java.time.LocalDate.now());
+        if (features == null || features.isEmpty()) {
+            return new RiskAnalysisService.RiskResult(0.0, RiskLevel.LOW, "{}");
+        }
+        double[] tuned = riskAnalysisService.tuneByCrossValidation(java.time.LocalDate.now());
+        RiskAnalysisService.RiskResult result = riskAnalysisService.evaluateStudent(features, tuned);
+        userMapper.updateRiskLevel(studentId, result.level().name());
+        activityMapper.saveRiskRecord(studentId, java.time.LocalDate.now(), result.score(), result.level().name(), result.detailJson());
+        return result;
     }
 
     private int scoreByAnswers(Long taskId, Map<String, String> answers, int totalCount) {

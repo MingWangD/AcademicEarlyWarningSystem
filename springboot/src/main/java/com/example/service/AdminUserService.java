@@ -51,7 +51,7 @@ public class AdminUserService {
 
     public Map<String, Object> dashboard(ActivityMapper activityMapper) {
         Map<String, Object> map = new HashMap<>();
-        map.put("riskDistribution", activityMapper.riskDistribution());
+        map.put("riskDistribution", activityMapper.latestRiskDistribution());
         map.put("riskTrend", activityMapper.riskTrend());
         map.put("recentWarnings", activityMapper.recentWarnings());
         map.put("totalUsers", userMapper.countAll());
