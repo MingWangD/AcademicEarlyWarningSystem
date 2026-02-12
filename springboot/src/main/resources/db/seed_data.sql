@@ -25,11 +25,11 @@ TRUNCATE TABLE user;
 -- BCrypt hash: $2a$10$X5Q81Q7hA7vEzh6f6N0oWuQxi2P.DA7f4f8QhVfXQ4Wv0VJriM8lK
 -- ----------------------------
 INSERT INTO user (id, username, password, email, name, role, risk_level, enabled, created_at) VALUES
-(1, 'admin01',   '$2a$10$X5Q81Q7hA7vEzh6f6N0oWuQxi2P.DA7f4f8QhVfXQ4Wv0VJriM8lK', 'admin01@school.edu',   '系统管理员', 'ADMIN',   'LOW',    1, NOW()),
-(2, 'teacher01', '$2a$10$X5Q81Q7hA7vEzh6f6N0oWuQxi2P.DA7f4f8QhVfXQ4Wv0VJriM8lK', 'teacher01@school.edu', '张老师',     'TEACHER', 'LOW',    1, NOW()),
-(3, 'stu1001',   '$2a$10$X5Q81Q7hA7vEzh6f6N0oWuQxi2P.DA7f4f8QhVfXQ4Wv0VJriM8lK', 'stu1001@school.edu',   '李同学',     'STUDENT', 'MEDIUM', 1, NOW()),
-(4, 'stu1002',   '$2a$10$X5Q81Q7hA7vEzh6f6N0oWuQxi2P.DA7f4f8QhVfXQ4Wv0VJriM8lK', 'stu1002@school.edu',   '王同学',     'STUDENT', 'LOW',    1, NOW()),
-(5, 'stu1003',   '$2a$10$X5Q81Q7hA7vEzh6f6N0oWuQxi2P.DA7f4f8QhVfXQ4Wv0VJriM8lK', 'stu1003@school.edu',   '赵同学',     'STUDENT', 'HIGH',   1, NOW());
+(1, 'admin01',   '$2a$10$hoAHDYCs5tfvd.qmWCMIL.0K8fnmtMiKNH.2Fjpq.pu7e9U/6v8dO', 'admin01@school.edu',   '系统管理员', 'ADMIN',   'LOW',    1, NOW()),
+(2, 'teacher01', '$2a$10$hoAHDYCs5tfvd.qmWCMIL.0K8fnmtMiKNH.2Fjpq.pu7e9U/6v8dO', 'teacher01@school.edu', '张老师',     'TEACHER', 'LOW',    1, NOW()),
+(3, 'stu1001',   '$2a$10$hoAHDYCs5tfvd.qmWCMIL.0K8fnmtMiKNH.2Fjpq.pu7e9U/6v8dO', 'stu1001@school.edu',   '李同学',     'STUDENT', 'MEDIUM', 1, NOW()),
+(4, 'stu1002',   '$2a$10$hoAHDYCs5tfvd.qmWCMIL.0K8fnmtMiKNH.2Fjpq.pu7e9U/6v8dO', 'stu1002@school.edu',   '王同学',     'STUDENT', 'LOW',    1, NOW()),
+(5, 'stu1003',   '$2a$10$hoAHDYCs5tfvd.qmWCMIL.0K8fnmtMiKNH.2Fjpq.pu7e9U/6v8dO', 'stu1003@school.edu',   '赵同学',     'STUDENT', 'HIGH',   1, NOW());
 
 -- ----------------------------
 -- 课程

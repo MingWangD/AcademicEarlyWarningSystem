@@ -9,7 +9,13 @@
       <el-table-column prop="name" label="姓名"/>
       <el-table-column prop="email" label="邮箱"/>
       <el-table-column prop="role" label="角色"/>
-      <el-table-column prop="riskLevel" label="风险等级"/>
+      <el-table-column label="风险等级">
+        <template #default="scope">
+          <span v-if="scope.row.role === 'STUDENT'">{{ scope.row.riskLevel }}</span>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+
       <el-table-column label="操作" width="220">
         <template #default="scope">
           <el-button size="small" @click="edit(scope.row)">编辑</el-button>
