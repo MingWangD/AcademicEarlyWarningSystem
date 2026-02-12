@@ -6,6 +6,7 @@ import com.example.entity.Task;
 import com.example.enums.RiskLevel;
 import com.example.mapper.ActivityMapper;
 import com.example.mapper.TaskMapper;
+import com.example.mapper.QuestionMapper;
 import com.example.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +21,14 @@ public class TeacherService {
     private final TaskMapper taskMapper;
     private final ActivityMapper activityMapper;
     private final UserMapper userMapper;
+    private final QuestionMapper questionMapper;
     private final RiskAnalysisService riskAnalysisService;
 
-    public TeacherService(TaskMapper taskMapper, ActivityMapper activityMapper, UserMapper userMapper, RiskAnalysisService riskAnalysisService) {
+    public TeacherService(TaskMapper taskMapper, ActivityMapper activityMapper, UserMapper userMapper, QuestionMapper questionMapper, RiskAnalysisService riskAnalysisService) {
         this.taskMapper = taskMapper;
         this.activityMapper = activityMapper;
         this.userMapper = userMapper;
+        this.questionMapper = questionMapper;
         this.riskAnalysisService = riskAnalysisService;
     }
 
@@ -38,6 +41,14 @@ public class TeacherService {
         task.setDueDate(request.getDueDate());
         task.setCreatedBy(teacherId);
         taskMapper.insert(task);
+        if ("homework".equals(task.getType()) || "exam".equals(task.getType())) {
+            String useType = "homework".equals(task.getType()) ? "HOMEWORK" : "EXAM";
+            int count = "homework".equals(task.getType()) ? 5 : 10;
+            var questions = questionMapper.randomByCourseAndType(task.getCourseId(), useType, count);
+            for (var q : questions) {
+                questionMapper.bindTaskQuestion(task.getId(), q.getId());
+            }
+        }
         return task.getId();
     }
 

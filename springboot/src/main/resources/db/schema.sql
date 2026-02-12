@@ -107,3 +107,28 @@ CREATE TABLE IF NOT EXISTS risk_record (
     INDEX idx_risk_date_level (calc_date, risk_level),
     CONSTRAINT fk_risk_student FOREIGN KEY (student_id) REFERENCES user(id)
 );
+
+
+CREATE TABLE IF NOT EXISTS question_bank (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    course_id BIGINT NOT NULL,
+    use_type VARCHAR(16) NOT NULL COMMENT 'HOMEWORK/EXAM',
+    stem VARCHAR(255) NOT NULL,
+    option_a VARCHAR(255) NOT NULL,
+    option_b VARCHAR(255) NOT NULL,
+    option_c VARCHAR(255) NOT NULL,
+    option_d VARCHAR(255) NOT NULL,
+    correct_answer CHAR(1) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_qb_course_type (course_id, use_type),
+    CONSTRAINT fk_qb_course FOREIGN KEY (course_id) REFERENCES course(id)
+);
+
+CREATE TABLE IF NOT EXISTS task_question (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    task_id BIGINT NOT NULL,
+    question_id BIGINT NOT NULL,
+    UNIQUE KEY uk_task_question (task_id, question_id),
+    CONSTRAINT fk_tq_task FOREIGN KEY (task_id) REFERENCES task(id),
+    CONSTRAINT fk_tq_question FOREIGN KEY (question_id) REFERENCES question_bank(id)
+);

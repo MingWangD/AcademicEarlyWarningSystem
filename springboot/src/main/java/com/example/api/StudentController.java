@@ -29,10 +29,20 @@ public class StudentController {
         return ApiResponse.ok(studentService.getTasks(uid));
     }
 
+    @GetMapping("/homework/{taskId}/questions")
+    public ApiResponse<?> homeworkQuestions(@PathVariable Long taskId) {
+        return ApiResponse.ok(studentService.taskQuestions(taskId));
+    }
+
+    @GetMapping("/exam/{taskId}/questions")
+    public ApiResponse<?> examQuestions(@PathVariable Long taskId) {
+        return ApiResponse.ok(studentService.taskQuestions(taskId));
+    }
+
     @PostMapping("/homework/submit")
-    public ApiResponse<?> homework(Authentication auth, @RequestBody StudentRequests.HomeworkSubmitRequest request) {
+    public ApiResponse<?> homework(Authentication auth, @RequestBody StudentRequests.TaskAnswerSubmitRequest request) {
         Long uid = extractUid(auth);
-        return ApiResponse.ok(studentService.submitHomework(uid, request.getHomeworkId(), request.getContent()));
+        return ApiResponse.ok(studentService.submitHomeworkAnswers(uid, request.getTaskId(), request.getAnswers()));
     }
 
     @PostMapping("/video/watch")
@@ -42,12 +52,9 @@ public class StudentController {
     }
 
     @PostMapping("/exam/submit")
-    public ApiResponse<?> exam(Authentication auth, @RequestBody StudentRequests.ExamSubmitRequest request) {
+    public ApiResponse<?> exam(Authentication auth, @RequestBody StudentRequests.TaskAnswerSubmitRequest request) {
         Long uid = extractUid(auth);
-        return ApiResponse.ok(
-                studentService.submitExam(uid, request.getExamId(),
-                        request.getAnswers() == null ? "{}" : request.getAnswers().toString())
-        );
+        return ApiResponse.ok(studentService.submitExamAnswers(uid, request.getTaskId(), request.getAnswers()));
     }
 
     private Long extractUid(Authentication auth) {

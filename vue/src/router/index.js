@@ -13,6 +13,8 @@ const router = createRouter({
         { path: 'student/profile', component: () => import('@/views/student/Profile.vue') },
         { path: 'student/tasks', component: () => import('@/views/student/Tasks.vue') },
         { path: 'student/warnings', component: () => import('@/views/student/Warnings.vue') },
+        { path: 'student/homework/:taskId', component: () => import('@/views/student/HomeworkTask.vue') },
+        { path: 'student/exam/:taskId', component: () => import('@/views/student/ExamTask.vue') },
 
         { path: 'teacher/publish', component: () => import('@/views/teacher/PublishTask.vue') },
         { path: 'teacher/activity', component: () => import('@/views/teacher/ActivitySummary.vue') },

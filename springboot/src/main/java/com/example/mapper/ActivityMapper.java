@@ -8,8 +8,8 @@ import java.util.Map;
 
 @Mapper
 public interface ActivityMapper {
-    @Insert("insert into homework_submission(homework_id,student_id,content,status,submitted_at) values(#{homeworkId},#{studentId},#{content},'SUBMITTED',now())")
-    int submitHomework(@Param("homeworkId") Long homeworkId, @Param("studentId") Long studentId, @Param("content") String content);
+    @Insert("insert into homework_submission(homework_id,student_id,content,status,score,submitted_at) values(#{homeworkId},#{studentId},#{content},'SUBMITTED',#{score},now())")
+    int submitHomework(@Param("homeworkId") Long homeworkId, @Param("studentId") Long studentId, @Param("content") String content, @Param("score") Integer score);
 
     @Insert("insert into video_watch_record(video_id,student_id,watch_time,last_watched_at) values(#{videoId},#{studentId},#{watchTime},now()) on duplicate key update watch_time=watch_time+values(watch_time), last_watched_at=now()")
     int upsertVideoWatch(@Param("videoId") Long videoId, @Param("studentId") Long studentId, @Param("watchTime") Integer watchTime);
@@ -28,6 +28,17 @@ public interface ActivityMapper {
 
     @Select("select count(1) from exam_submission where exam_id=#{taskId} and student_id=#{studentId}")
     int countExamSubmitted(@Param("taskId") Long taskId, @Param("studentId") Long studentId);
+
+
+
+    @Insert("insert into student_daily_activity(student_id,activity_date,homework_submitted,avg_score) values(#{studentId},curdate(),1,#{score}) on duplicate key update homework_submitted=homework_submitted+1, avg_score=case when avg_score=0 then #{score} else (avg_score+#{score})/2 end")
+    int upsertDailyHomework(@Param("studentId") Long studentId, @Param("score") Integer score);
+
+    @Insert("insert into student_daily_activity(student_id,activity_date,video_minutes) values(#{studentId},curdate(),#{minutes}) on duplicate key update video_minutes=video_minutes+#{minutes}")
+    int upsertDailyVideo(@Param("studentId") Long studentId, @Param("minutes") Integer minutes);
+
+    @Insert("insert into student_daily_activity(student_id,activity_date,avg_score) values(#{studentId},curdate(),#{score}) on duplicate key update avg_score=case when avg_score=0 then #{score} else (avg_score+#{score})/2 end")
+    int upsertDailyExam(@Param("studentId") Long studentId, @Param("score") Integer score);
 
     @Select("select u.id as studentId,u.name as studentName,ifnull(a.login_count,0) as loginCount,ifnull(a.video_minutes,0) as videoMinutes,ifnull(a.homework_submitted,0) as homeworkSubmitted,ifnull(a.avg_score,0) as avgScore from user u left join student_daily_activity a on u.id=a.student_id and a.activity_date=#{date} where u.role='STUDENT'")
     List<Map<String,Object>> activitySummary(LocalDate date);

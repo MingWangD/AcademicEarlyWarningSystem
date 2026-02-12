@@ -32,6 +32,16 @@ public class StudentRequests {
         public void setAnswers(Map<String, String> answers) { this.answers = answers; }
     }
 
+
+    public static class TaskAnswerSubmitRequest {
+        private Long taskId;
+        private Map<String, String> answers;
+        public Long getTaskId() { return taskId; }
+        public void setTaskId(Long taskId) { this.taskId = taskId; }
+        public Map<String, String> getAnswers() { return answers; }
+        public void setAnswers(Map<String, String> answers) { this.answers = answers; }
+    }
+
     public static class TeacherTaskCreateRequest {
         private Long courseId;
         private String type;
