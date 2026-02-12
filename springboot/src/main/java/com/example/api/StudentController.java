@@ -24,6 +24,10 @@ public class StudentController {
     }
 
     @GetMapping("/tasks")
+    public ApiResponse<?> tasks(Authentication auth) {
+        Long uid = extractUid(auth);
+        return ApiResponse.ok(studentService.getTasks(uid));
+    }
     public ApiResponse<?> tasks() { return ApiResponse.ok(studentService.getTasks()); }
 
     @PostMapping("/homework/submit")

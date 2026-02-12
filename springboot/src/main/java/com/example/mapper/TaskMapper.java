@@ -13,4 +13,7 @@ public interface TaskMapper {
 
     @Select("select id,course_id,type,title,details,due_date,created_by from task order by due_date asc")
     List<Task> findAll();
+
+    @Select("select id,course_id,type,title,details,due_date,created_by from task where id=#{id}")
+    Task findById(Long id);
 }

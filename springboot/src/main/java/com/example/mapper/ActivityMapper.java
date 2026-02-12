@@ -17,6 +17,18 @@ public interface ActivityMapper {
     @Insert("insert into exam_submission(exam_id,student_id,answers,score,is_passed,submitted_at) values(#{examId},#{studentId},#{answers},#{score},#{isPassed},now())")
     int submitExam(@Param("examId") Long examId, @Param("studentId") Long studentId, @Param("answers") String answers, @Param("score") Integer score, @Param("isPassed") boolean isPassed);
 
+    @Insert("insert ignore into exam(id,course_id,title,total_score,pass_score,start_time,end_time) values(#{examId},#{courseId},#{title},100,60,now(),date_add(now(), interval 7 day))")
+    int ensureExamExists(@Param("examId") Long examId, @Param("courseId") Long courseId, @Param("title") String title);
+
+    @Select("select count(1) from homework_submission where homework_id=#{taskId} and student_id=#{studentId}")
+    int countHomeworkSubmitted(@Param("taskId") Long taskId, @Param("studentId") Long studentId);
+
+    @Select("select ifnull(watch_time,0) from video_watch_record where video_id=#{taskId} and student_id=#{studentId} limit 1")
+    Integer videoWatchTime(@Param("taskId") Long taskId, @Param("studentId") Long studentId);
+
+    @Select("select count(1) from exam_submission where exam_id=#{taskId} and student_id=#{studentId}")
+    int countExamSubmitted(@Param("taskId") Long taskId, @Param("studentId") Long studentId);
+
     @Select("select u.id as studentId,u.name as studentName,ifnull(a.login_count,0) as loginCount,ifnull(a.video_minutes,0) as videoMinutes,ifnull(a.homework_submitted,0) as homeworkSubmitted,ifnull(a.avg_score,0) as avgScore from user u left join student_daily_activity a on u.id=a.student_id and a.activity_date=#{date} where u.role='STUDENT'")
     List<Map<String,Object>> activitySummary(LocalDate date);
 
