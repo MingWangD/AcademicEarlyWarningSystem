@@ -2,6 +2,7 @@
   <el-card>
     <template #header>触发学业风险计算</template>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div style="display:flex;gap:12px;align-items:center">
       <el-date-picker v-model="date" value-format="YYYY-MM-DD"/>
       <el-button type="primary" @click="calc">立即计算</el-button>
     </div>
