@@ -8,6 +8,8 @@ import com.example.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class StudentService {
@@ -48,6 +50,8 @@ public class StudentService {
             case "exam" -> activityMapper.countExamSubmitted(task.getId(), studentId) > 0 ? "已完成" : "待考试";
             default -> "待完成";
         };
+    public Object getTasks() {
+        return taskMapper.findAll();
     }
 
     public Map<String, Boolean> submitHomework(Long studentId, Long homeworkId, String content) {
