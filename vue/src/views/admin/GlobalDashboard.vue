@@ -3,7 +3,7 @@
     <el-col :xs="24" :sm="8">
       <el-card>
         <template #header>全校用户数</template>
-        <div class="big">{{ data.totalUsers || 0 }}</div>
+        <div class="big">{{ data.totalUsers -2 || 0 }}</div>
       </el-card>
     </el-col>
     <el-col :xs="24" :sm="16">
