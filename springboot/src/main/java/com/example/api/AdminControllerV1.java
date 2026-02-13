@@ -20,7 +20,7 @@ public class AdminControllerV1 {
     }
 
     @GetMapping("/user")
-    public ApiResponse<?> list(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize) {
+    public ApiResponse<?> list(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "7") int pageSize) {
         return ApiResponse.ok(adminUserService.list(pageNum, pageSize));
     }
 
