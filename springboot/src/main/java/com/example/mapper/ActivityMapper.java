@@ -111,13 +111,16 @@ public interface ActivityMapper {
             select rr.risk_level as riskLevel, count(1) as count
             from risk_record rr
             join (
-              select student_id, max(calc_date) as latest_date
+              select student_id, max(id) as latest_id
               from risk_record
               group by student_id
-            ) latest on rr.student_id = latest.student_id and rr.calc_date = latest.latest_date
+            ) latest on rr.id = latest.latest_id
             group by rr.risk_level
             """)
     List<Map<String,Object>> latestRiskDistribution();
+
+    @Select("select max(calc_date) from risk_record")
+    java.time.LocalDate latestRiskCalcDate();
 
     @Select("select calc_date as date, avg(risk_score) as avgRiskScore from risk_record group by calc_date order by calc_date desc limit 7")
     List<Map<String,Object>> riskTrend();
