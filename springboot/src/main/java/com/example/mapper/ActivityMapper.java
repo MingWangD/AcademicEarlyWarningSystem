@@ -3,6 +3,7 @@ package com.example.mapper;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -17,8 +18,19 @@ public interface ActivityMapper {
     @Insert("insert into exam_submission(exam_id,student_id,answers,score,is_passed,submitted_at) values(#{examId},#{studentId},#{answers},#{score},#{isPassed},now())")
     int submitExam(@Param("examId") Long examId, @Param("studentId") Long studentId, @Param("answers") String answers, @Param("score") Integer score, @Param("isPassed") boolean isPassed);
 
-    @Insert("insert ignore into exam(id,course_id,title,total_score,pass_score,start_time,end_time) values(#{examId},#{courseId},#{title},100,60,now(),date_add(now(), interval 7 day))")
-    int ensureExamExists(@Param("examId") Long examId, @Param("courseId") Long courseId, @Param("title") String title);
+    @Insert("""
+            insert into exam(id,course_id,title,total_score,pass_score,start_time,end_time)
+            values(#{examId},#{courseId},#{title},100,60,coalesce(#{startTime}, now()),coalesce(#{endTime}, date_add(now(), interval 7 day)))
+            on duplicate key update
+                course_id=values(course_id),
+                title=values(title),
+                end_time=values(end_time)
+            """)
+    int ensureExamExists(@Param("examId") Long examId,
+                         @Param("courseId") Long courseId,
+                         @Param("title") String title,
+                         @Param("startTime") LocalDateTime startTime,
+                         @Param("endTime") LocalDateTime endTime);
 
     @Select("select count(1) from homework_submission where homework_id=#{taskId} and student_id=#{studentId}")
     int countHomeworkSubmitted(@Param("taskId") Long taskId, @Param("studentId") Long studentId);
@@ -111,17 +123,31 @@ public interface ActivityMapper {
             select rr.risk_level as riskLevel, count(1) as count
             from risk_record rr
             join (
-              select student_id, max(calc_date) as latest_date
+              select student_id, max(id) as latest_id
               from risk_record
               group by student_id
-            ) latest on rr.student_id = latest.student_id and rr.calc_date = latest.latest_date
+            ) latest on rr.id = latest.latest_id
             group by rr.risk_level
             """)
     List<Map<String,Object>> latestRiskDistribution();
+
+    @Select("select max(calc_date) from risk_record")
+    java.time.LocalDate latestRiskCalcDate();
+
+    @Select("select max(calc_date) from risk_record where calc_date<=curdate()")
+    java.time.LocalDate latestRiskCalcDateUntilToday();
 
     @Select("select calc_date as date, avg(risk_score) as avgRiskScore from risk_record group by calc_date order by calc_date desc limit 7")
     List<Map<String,Object>> riskTrend();
 
     @Select("select student_id as studentId, risk_level as riskLevel, risk_score as riskScore, calc_date as calcDate from risk_record order by id desc limit 10")
     List<Map<String,Object>> recentWarnings();
+
+    @Select("""
+            select student_id as studentId, risk_level as riskLevel, risk_score as riskScore, calc_date as calcDate
+            from risk_record
+            where calc_date between date_sub(curdate(), interval 6 day) and curdate()
+            order by calc_date desc, id desc
+            """)
+    List<Map<String,Object>> recentWarningsLast7Days();
 }

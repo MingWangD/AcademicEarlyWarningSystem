@@ -88,10 +88,15 @@ public class StudentService {
         );
     }
 
-    public Map<String, Boolean> watchVideo(Long studentId, Long videoId, Integer watchTime) {
+    public Map<String, Object> watchVideo(Long studentId, Long videoId, Integer watchTime) {
         activityMapper.upsertVideoWatch(videoId, studentId, watchTime);
         activityMapper.upsertDailyVideo(studentId, Math.max(1, watchTime / 60));
-        return Map.of("success", true);
+        RiskAnalysisService.RiskResult riskResult = refreshRiskLevel(studentId);
+        return Map.of(
+                "success", true,
+                "riskLevel", riskResult.level().name(),
+                "riskScore", riskResult.score()
+        );
     }
 
     public Map<String, Object> submitExamAnswers(Long studentId, Long taskId, Map<String, String> answers) {
@@ -99,7 +104,7 @@ public class StudentService {
         if (task == null) {
             throw new IllegalArgumentException("考试任务不存在");
         }
-        activityMapper.ensureExamExists(taskId, task.getCourseId(), task.getTitle());
+        activityMapper.ensureExamExists(taskId, task.getCourseId(), task.getTitle(), java.time.LocalDateTime.now(), task.getDueDate());
         int score = scoreByAnswers(taskId, answers, 10);
         boolean isPassed = score >= 60;
         activityMapper.submitExam(taskId, studentId, JSONUtil.toJsonStr(answers), score, isPassed);
