@@ -27,7 +27,8 @@ public class RiskAnalysisService {
 
         double homeworkMissRate = examCount > 0 ? Math.max(0, 1 - homeworkSubmitted / Math.max(examCount, 1)) : (homeworkSubmitted == 0 ? 1 : 0);
         double examFailRate = examCount > 0 ? Math.max(0, 1 - examPassCount / examCount) : (avgScore < 60 ? 1 : 0);
-        double normalizedVideo = Math.min(videoMinutes / 60.0, 1.0);
+        // 与学生任务完成标准保持一致：视频达到 5 分钟视为满足基础学习要求
+        double normalizedVideo = Math.min(videoMinutes / 5.0, 1.0);
         double normalizedLogin = Math.min(loginCount / 5.0, 1.0);
         double normalizedScore = Math.min(Math.max(avgScore / 100.0, 0), 1);
 
@@ -101,7 +102,7 @@ public class RiskAnalysisService {
         double avgScore = num(row.get("avgScore"));
         double homework = num(row.get("homeworkSubmitted"));
         double video = num(row.get("videoMinutes"));
-        return avgScore < 60 || homework < 1 || video < 15;
+        return avgScore < 60 || homework < 1 || video < 5;
     }
 
     private double num(Object n) {
