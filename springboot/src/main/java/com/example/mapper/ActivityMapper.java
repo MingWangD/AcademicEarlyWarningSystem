@@ -144,10 +144,18 @@ public interface ActivityMapper {
     List<Map<String,Object>> recentWarnings();
 
     @Select("""
-            select student_id as studentId, risk_level as riskLevel, risk_score as riskScore, calc_date as calcDate
-            from risk_record
-            where calc_date between date_sub(curdate(), interval 6 day) and curdate()
-            order by calc_date desc, id desc
+            select rr.student_id as studentId,
+                   rr.risk_level as riskLevel,
+                   rr.risk_score as riskScore,
+                   rr.calc_date as calcDate
+            from risk_record rr
+            join (
+                select student_id, calc_date, max(id) as latest_id
+                from risk_record
+                where calc_date between date_sub(curdate(), interval 6 day) and curdate()
+                group by student_id, calc_date
+            ) latest on rr.id = latest.latest_id
+            order by rr.calc_date desc, rr.student_id asc, rr.id desc
             """)
     List<Map<String,Object>> recentWarningsLast7Days();
 }

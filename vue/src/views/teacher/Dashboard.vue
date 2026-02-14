@@ -73,7 +73,14 @@ const sortById = (arr = []) => [...arr].sort((a, b) => Number(a.id || a.studentI
 const highRiskStudentsSorted = computed(() => sortById(data.highRiskStudents || []))
 const mediumRiskStudentsSorted = computed(() => sortById(data.mediumRiskStudents || []))
 const lowRiskStudentsSorted = computed(() => sortById(data.lowRiskStudents || []))
-const recentWarningsSorted = computed(() => sortById(data.recentWarnings || []))
+const recentWarningsSorted = computed(() => {
+  return [...(data.recentWarnings || [])].sort((a, b) => {
+    const da = String(a.calcDate || '')
+    const db = String(b.calcDate || '')
+    if (da !== db) return db.localeCompare(da)
+    return Number(a.studentId || 0) - Number(b.studentId || 0)
+  })
+})
 
 const pagedRecentWarnings = computed(() => {
   const start = (currentPage.value - 1) * pageSize
