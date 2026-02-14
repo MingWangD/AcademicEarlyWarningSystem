@@ -101,14 +101,14 @@ public class TeacherService {
         long medium = students.stream().filter(u -> u.getRiskLevel() == RiskLevel.MEDIUM).count();
         long low = students.stream().filter(u -> u.getRiskLevel() == RiskLevel.LOW).count();
 
-        LocalDate latestCalcDate = activityMapper.latestRiskCalcDate();
+        LocalDate latestCalcDate = activityMapper.latestRiskCalcDateUntilToday();
         Map<String, Object> data = new HashMap<>();
         data.put("highRiskStudents", students.stream().filter(u -> u.getRiskLevel() == RiskLevel.HIGH).toList());
         data.put("mediumRiskStudents", students.stream().filter(u -> u.getRiskLevel() == RiskLevel.MEDIUM).toList());
         data.put("lowRiskStudents", students.stream().filter(u -> u.getRiskLevel() == RiskLevel.LOW).toList());
         data.put("riskDistribution", activityMapper.latestRiskDistribution());
         data.put("riskTrend", activityMapper.riskTrend());
-        data.put("recentWarnings", activityMapper.recentWarnings());
+        data.put("recentWarnings", activityMapper.recentWarningsLast7Days());
         data.put("summary", Map.of(
                 "highCount", high,
                 "mediumCount", medium,

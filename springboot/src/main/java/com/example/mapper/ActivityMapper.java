@@ -134,9 +134,20 @@ public interface ActivityMapper {
     @Select("select max(calc_date) from risk_record")
     java.time.LocalDate latestRiskCalcDate();
 
+    @Select("select max(calc_date) from risk_record where calc_date<=curdate()")
+    java.time.LocalDate latestRiskCalcDateUntilToday();
+
     @Select("select calc_date as date, avg(risk_score) as avgRiskScore from risk_record group by calc_date order by calc_date desc limit 7")
     List<Map<String,Object>> riskTrend();
 
     @Select("select student_id as studentId, risk_level as riskLevel, risk_score as riskScore, calc_date as calcDate from risk_record order by id desc limit 10")
     List<Map<String,Object>> recentWarnings();
+
+    @Select("""
+            select student_id as studentId, risk_level as riskLevel, risk_score as riskScore, calc_date as calcDate
+            from risk_record
+            where calc_date between date_sub(curdate(), interval 6 day) and curdate()
+            order by calc_date desc, id desc
+            """)
+    List<Map<String,Object>> recentWarningsLast7Days();
 }
