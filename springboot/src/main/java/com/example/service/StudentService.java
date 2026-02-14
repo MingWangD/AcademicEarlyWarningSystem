@@ -104,7 +104,7 @@ public class StudentService {
         if (task == null) {
             throw new IllegalArgumentException("考试任务不存在");
         }
-        activityMapper.ensureExamExists(taskId, task.getCourseId(), task.getTitle());
+        activityMapper.ensureExamExists(taskId, task.getCourseId(), task.getTitle(), java.time.LocalDateTime.now(), task.getDueDate());
         int score = scoreByAnswers(taskId, answers, 10);
         boolean isPassed = score >= 60;
         activityMapper.submitExam(taskId, studentId, JSONUtil.toJsonStr(answers), score, isPassed);
