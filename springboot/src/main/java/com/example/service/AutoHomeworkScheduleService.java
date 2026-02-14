@@ -9,18 +9,21 @@ import com.example.mapper.UserMapper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.CRC32;
 
 @Service
 public class AutoHomeworkScheduleService {
 
     private static final Long DEFAULT_TEACHER_ID = 2L;
     private static final Long DEFAULT_COURSE_ID = 1L;
+    private static final int AUTO_SUBMIT_RATE_PERCENT = 70;
 
     private final TeacherService teacherService;
     private final StudentService studentService;
@@ -77,10 +80,25 @@ public class AutoHomeworkScheduleService {
 
         List<AppUser> students = userMapper.findAllStudents();
         for (AppUser student : students) {
+            if (!shouldAutoSubmit(today, student.getId())) {
+                continue;
+            }
             if (activityMapper.countHomeworkSubmitted(task.getId(), student.getId()) > 0) {
                 continue;
             }
             studentService.submitHomeworkAnswers(student.getId(), task.getId(), answerTemplate);
         }
+    }
+
+    /**
+     * 按“日期 + 学号”做稳定伪随机：每天约 70% 学生会被自动提交。
+     * 同一天重复执行任务时结果稳定，避免忽高忽低。
+     */
+    private boolean shouldAutoSubmit(LocalDate date, Long studentId) {
+        CRC32 crc32 = new CRC32();
+        String key = date + "-" + studentId;
+        crc32.update(key.getBytes(StandardCharsets.UTF_8));
+        long bucket = crc32.getValue() % 100;
+        return bucket < AUTO_SUBMIT_RATE_PERCENT;
     }
 }
