@@ -3,12 +3,14 @@ package com.example.service;
 import com.example.dto.StudentRequests;
 import com.example.entity.AppUser;
 import com.example.entity.Task;
+import com.example.entity.Question;
 import com.example.enums.RiskLevel;
 import com.example.mapper.ActivityMapper;
 import com.example.mapper.TaskMapper;
 import com.example.mapper.QuestionMapper;
 import com.example.mapper.UserMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,7 +34,18 @@ public class TeacherService {
         this.riskAnalysisService = riskAnalysisService;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public Long createTask(StudentRequests.TeacherTaskCreateRequest request, Long teacherId) {
+        List<Question> questions = List.of();
+        if ("homework".equals(request.getType()) || "exam".equals(request.getType())) {
+            String useType = "homework".equals(request.getType()) ? "HOMEWORK" : "EXAM";
+            int count = "homework".equals(request.getType()) ? 5 : 10;
+            questions = questionMapper.randomByCourseAndType(request.getCourseId(), useType, count);
+            if (questions.isEmpty()) {
+                throw new IllegalStateException("题库中暂无可用试题，请先维护题库后再发布任务");
+            }
+        }
+
         Task task = new Task();
         task.setCourseId(request.getCourseId());
         task.setType(request.getType());
@@ -42,12 +55,12 @@ public class TeacherService {
         task.setCreatedBy(teacherId);
         taskMapper.insert(task);
         if ("homework".equals(task.getType()) || "exam".equals(task.getType())) {
-            String useType = "homework".equals(task.getType()) ? "HOMEWORK" : "EXAM";
-            int count = "homework".equals(task.getType()) ? 5 : 10;
-            var questions = questionMapper.randomByCourseAndType(task.getCourseId(), useType, count);
-            for (var q : questions) {
+            for (Question q : questions) {
                 questionMapper.bindTaskQuestion(task.getId(), q.getId());
             }
+        }
+        if ("exam".equals(task.getType())) {
+            activityMapper.ensureExamExists(task.getId(), task.getCourseId(), task.getTitle(), LocalDateTime.now(), task.getDueDate());
         }
         return task.getId();
     }
@@ -88,10 +101,12 @@ public class TeacherService {
         long medium = students.stream().filter(u -> u.getRiskLevel() == RiskLevel.MEDIUM).count();
         long low = students.stream().filter(u -> u.getRiskLevel() == RiskLevel.LOW).count();
 
+        LocalDate latestCalcDate = activityMapper.latestRiskCalcDate();
         Map<String, Object> data = new HashMap<>();
         data.put("highRiskStudents", students.stream().filter(u -> u.getRiskLevel() == RiskLevel.HIGH).toList());
         data.put("mediumRiskStudents", students.stream().filter(u -> u.getRiskLevel() == RiskLevel.MEDIUM).toList());
-        data.put("riskDistribution", activityMapper.riskDistribution());
+        data.put("lowRiskStudents", students.stream().filter(u -> u.getRiskLevel() == RiskLevel.LOW).toList());
+        data.put("riskDistribution", activityMapper.latestRiskDistribution());
         data.put("riskTrend", activityMapper.riskTrend());
         data.put("recentWarnings", activityMapper.recentWarnings());
         data.put("summary", Map.of(
@@ -99,7 +114,7 @@ public class TeacherService {
                 "mediumCount", medium,
                 "lowCount", low,
                 "totalStudents", students.size(),
-                "refreshedAt", LocalDateTime.now().toString()
+                "refreshedAt", latestCalcDate == null ? "-" : latestCalcDate.toString()
         ));
         return data;
     }
