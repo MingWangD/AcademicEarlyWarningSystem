@@ -13,11 +13,14 @@ public interface UserMapper {
     @Select("select id,username,password,email,name,role,risk_level from user where id=#{id}")
     AppUser findById(Long id);
 
-    @Select("select id,username,password,email,name,role,risk_level from user order by id desc limit #{offset},#{limit}")
+    @Select("select id,username,password,email,name,role,risk_level from user order by id asc limit #{offset},#{limit}")
     List<AppUser> findPage(@Param("offset") int offset, @Param("limit") int limit);
 
     @Select("select count(1) from user")
     long countAll();
+
+    @Select("select count(1) from user where role=#{role}")
+    long countByRole(@Param("role") String role);
 
     @Insert("insert into user(username,password,email,name,role,risk_level) values(#{username},#{password},#{email},#{name},#{role},#{riskLevel})")
     @Options(useGeneratedKeys = true, keyProperty = "id")

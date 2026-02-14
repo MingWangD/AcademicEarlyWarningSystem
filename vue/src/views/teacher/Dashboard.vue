@@ -4,16 +4,45 @@
     <el-col :xs="24" :sm="8"><el-card><template #header>中风险学生</template><div class="num med">{{ summary.mediumCount || 0 }}</div></el-card></el-col>
     <el-col :xs="24" :sm="8"><el-card><template #header>低风险学生</template><div class="num low">{{ summary.lowCount || 0 }}</div></el-card></el-col>
   </el-row>
+
   <el-card style="margin-top:12px">
     <template #header>风险分布</template>
-    <el-table :data="data.riskDistribution || []">
-      <el-table-column prop="riskLevel" label="等级"/>
+    <el-table :data="normalizedDistribution">
+      <el-table-column prop="label" label="等级"/>
       <el-table-column prop="count" label="人数"/>
     </el-table>
   </el-card>
+
   <el-card style="margin-top:12px">
-    <template #header>最近预警（刷新时间：{{ summary.refreshedAt || '-' }}）</template>
-    <el-table :data="data.recentWarnings || []">
+    <template #header>风险学生明细（按学号升序）</template>
+    <el-collapse accordion>
+      <el-collapse-item :title="`高风险学生（${highRiskStudentsSorted.length}）`" name="high">
+        <el-table :data="highRiskStudentsSorted" size="small">
+          <el-table-column prop="id" label="学号" width="120"/>
+          <el-table-column prop="name" label="姓名"/>
+          <el-table-column label="等级" width="120"><template #default>HIGH</template></el-table-column>
+        </el-table>
+      </el-collapse-item>
+      <el-collapse-item :title="`中风险学生（${mediumRiskStudentsSorted.length}）`" name="medium">
+        <el-table :data="mediumRiskStudentsSorted" size="small">
+          <el-table-column prop="id" label="学号" width="120"/>
+          <el-table-column prop="name" label="姓名"/>
+          <el-table-column label="等级" width="120"><template #default>MEDIUM</template></el-table-column>
+        </el-table>
+      </el-collapse-item>
+      <el-collapse-item :title="`低风险学生（${lowRiskStudentsSorted.length}）`" name="low">
+        <el-table :data="lowRiskStudentsSorted" size="small">
+          <el-table-column prop="id" label="学号" width="120"/>
+          <el-table-column prop="name" label="姓名"/>
+          <el-table-column label="等级" width="120"><template #default>LOW</template></el-table-column>
+        </el-table>
+      </el-collapse-item>
+    </el-collapse>
+  </el-card>
+
+  <el-card style="margin-top:12px">
+    <template #header>最近预警（最近风险计算日期：{{ summary.refreshedAt || '-' }}）</template>
+    <el-table :data="recentWarningsSorted">
       <el-table-column prop="studentId" label="学号"/>
       <el-table-column prop="riskLevel" label="等级"/>
       <el-table-column prop="riskScore" label="风险分"/>
@@ -24,9 +53,28 @@
 <script setup>
 import {computed, onMounted, reactive} from 'vue'
 import request from '@/utils/request'
+
 const data = reactive({})
 const summary = computed(() => data.summary || {})
-onMounted(()=>request.get('/api/v1/teacher/dashboard').then(res => Object.assign(data,res.data || {})))
+
+const sortById = (arr = []) => [...arr].sort((a, b) => Number(a.id || a.studentId || 0) - Number(b.id || b.studentId || 0))
+
+const highRiskStudentsSorted = computed(() => sortById(data.highRiskStudents || []))
+const mediumRiskStudentsSorted = computed(() => sortById(data.mediumRiskStudents || []))
+const lowRiskStudentsSorted = computed(() => sortById(data.lowRiskStudents || []))
+const recentWarningsSorted = computed(() => sortById(data.recentWarnings || []))
+
+const normalizedDistribution = computed(() => {
+  const src = data.riskDistribution || []
+  const map = Object.fromEntries(src.map(item => [item.riskLevel, Number(item.count || 0)]))
+  return [
+    { riskLevel: 'HIGH', label: '高风险', count: map.HIGH || 0 },
+    { riskLevel: 'MEDIUM', label: '中风险', count: map.MEDIUM || 0 },
+    { riskLevel: 'LOW', label: '低风险', count: map.LOW || 0 }
+  ]
+})
+
+onMounted(() => request.get('/api/v1/teacher/dashboard').then(res => Object.assign(data, res.data || {})))
 </script>
 <style scoped>
 .num{font-size: 30px;font-weight:700}
