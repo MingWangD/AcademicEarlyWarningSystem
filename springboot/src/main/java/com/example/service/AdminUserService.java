@@ -54,6 +54,8 @@ public class AdminUserService {
         map.put("riskTrend", activityMapper.riskTrend());
         map.put("recentWarnings", activityMapper.recentWarnings());
         map.put("totalUsers", userMapper.countAll());
+        map.put("totalStudents", userMapper.countByRole("STUDENT"));
+        map.put("refreshedAt", activityMapper.latestRiskCalcDate());
         return map;
     }
 }

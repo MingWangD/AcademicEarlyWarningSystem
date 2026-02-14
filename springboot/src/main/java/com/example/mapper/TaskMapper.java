@@ -16,4 +16,6 @@ public interface TaskMapper {
 
     @Select("select id,course_id,type,title,details,due_date,created_by from task where id=#{id}")
     Task findById(Long id);
+    @Select("select id,course_id,type,title,details,due_date,created_by from task where title=#{title} limit 1")
+    Task findByTitle(@Param("title") String title);
 }

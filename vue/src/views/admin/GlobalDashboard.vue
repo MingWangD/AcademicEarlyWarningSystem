@@ -2,8 +2,8 @@
   <el-row :gutter="12">
     <el-col :xs="24" :sm="8">
       <el-card>
-        <template #header>全校用户数</template>
-        <div class="big">{{ data.totalUsers -2 || 0 }}</div>
+        <template #header>学生总人数</template>
+        <div class="big">{{ data.totalStudents || 0 }}</div>
       </el-card>
     </el-col>
     <el-col :xs="24" :sm="16">
@@ -23,7 +23,7 @@
   </el-row>
 
   <el-card style="margin-top:12px">
-    <template #header>风险趋势（柱状图）</template>
+    <template #header>风险趋势（柱状图）｜最近风险计算日期：{{ data.refreshedAt || '-' }}</template>
     <div class="bar-chart">
       <div class="bar-item" v-for="row in data.riskTrend || []" :key="row.date">
         <div class="bar" :style="{ height: `${Math.max(6, Number(row.avgRiskScore || 0) * 100)}%` }"></div>
@@ -49,19 +49,21 @@ const colorMap = {
   LOW: '#67c23a'
 }
 
-const totalRiskCount = computed(() => (data.riskDistribution || []).reduce((sum, item) => sum + Number(item.count || 0), 0))
-
 const normalizedRiskDistribution = computed(() => {
-  const total = totalRiskCount.value
-  return (data.riskDistribution || []).map(item => {
-    const count = Number(item.count || 0)
-    return {
-      ...item,
-      count,
-      percent: total === 0 ? 0 : (count * 100) / total
-    }
-  })
+  const sourceMap = Object.fromEntries((data.riskDistribution || []).map(item => [item.riskLevel, Number(item.count || 0)]))
+  const items = [
+    { riskLevel: 'HIGH', count: sourceMap.HIGH || 0 },
+    { riskLevel: 'MEDIUM', count: sourceMap.MEDIUM || 0 },
+    { riskLevel: 'LOW', count: sourceMap.LOW || 0 }
+  ]
+  const total = items.reduce((sum, item) => sum + item.count, 0)
+  return items.map(item => ({
+    ...item,
+    percent: total === 0 ? 0 : (item.count * 100) / total
+  }))
 })
+
+const totalRiskCount = computed(() => normalizedRiskDistribution.value.reduce((sum, item) => sum + Number(item.count || 0), 0))
 
 const pieStyle = computed(() => {
   if (!normalizedRiskDistribution.value.length || totalRiskCount.value === 0) {
