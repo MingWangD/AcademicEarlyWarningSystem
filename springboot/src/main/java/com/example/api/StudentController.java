@@ -51,6 +51,12 @@ public class StudentController {
         return ApiResponse.ok(studentService.watchVideo(uid, request.getVideoId(), request.getWatchTime()));
     }
 
+    @GetMapping("/risk/high-streak")
+    public ApiResponse<?> highRiskStreak(Authentication auth) {
+        Long uid = extractUid(auth);
+        return ApiResponse.ok(studentService.highRiskStreak(uid));
+    }
+
     @PostMapping("/exam/submit")
     public ApiResponse<?> exam(Authentication auth, @RequestBody StudentRequests.TaskAnswerSubmitRequest request) {
         Long uid = extractUid(auth);

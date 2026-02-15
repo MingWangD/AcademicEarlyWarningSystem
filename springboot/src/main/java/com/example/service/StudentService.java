@@ -99,6 +99,11 @@ public class StudentService {
         );
     }
 
+    public Map<String, Object> highRiskStreak(Long studentId) {
+        Integer hit = activityMapper.isHighRiskStreak7(studentId);
+        return Map.of("high7days", hit != null && hit > 0);
+    }
+
     public Map<String, Object> submitExamAnswers(Long studentId, Long taskId, Map<String, String> answers) {
         Task task = taskMapper.findById(taskId);
         if (task == null) {

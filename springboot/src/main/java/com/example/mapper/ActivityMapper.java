@@ -158,4 +158,25 @@ public interface ActivityMapper {
             order by rr.calc_date desc, rr.student_id asc, rr.id desc
             """)
     List<Map<String,Object>> recentWarningsLast7Days();
+
+    @Select("""
+            select case
+                     when count(1)=7 and sum(case when t.riskLevel='HIGH' then 1 else 0 end)=7 then 1
+                     else 0
+                   end as hit
+            from (
+                select rr.risk_level as riskLevel
+                from risk_record rr
+                join (
+                    select max(id) as latest_id, calc_date
+                    from risk_record
+                    where student_id=#{studentId} and calc_date<=curdate()
+                    group by calc_date
+                    order by calc_date desc
+                    limit 7
+                ) latest on rr.id = latest.latest_id
+            ) t
+            """)
+    Integer isHighRiskStreak7(@Param("studentId") Long studentId);
+
 }
