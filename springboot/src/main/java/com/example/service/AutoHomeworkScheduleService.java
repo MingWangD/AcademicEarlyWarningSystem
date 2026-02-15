@@ -6,6 +6,8 @@ import com.example.entity.Task;
 import com.example.mapper.ActivityMapper;
 import com.example.mapper.TaskMapper;
 import com.example.mapper.UserMapper;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -49,8 +51,20 @@ public class AutoHomeworkScheduleService {
      */
     @Scheduled(cron = "0 20 0 * * ?")
     public void autoPublishAndSubmitHomework() {
-        LocalDate today = LocalDate.now();
-        String title = "自动作业-" + today;
+        runForDate(LocalDate.now());
+    }
+
+    /**
+     * 应用启动后做一次“当日补偿执行”：
+     * 如果服务器在 00:20 之后才启动，也会补发今天的自动作业。
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void runOnStartupCompensation() {
+        runForDate(LocalDate.now());
+    }
+
+    private void runForDate(LocalDate date) {
+        String title = "自动作业-" + date;
 
         Task task = taskMapper.findByTitle(title);
         if (task == null) {
@@ -59,7 +73,7 @@ public class AutoHomeworkScheduleService {
             req.setType("homework");
             req.setTitle(title);
             req.setDetails("系统每日凌晨自动发布的练习作业");
-            req.setDueDate(LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59)));
+            req.setDueDate(LocalDateTime.of(date.plusDays(1), LocalTime.of(23, 59)));
             Long taskId = teacherService.createTask(req, DEFAULT_TEACHER_ID);
             task = taskMapper.findById(taskId);
         }
@@ -80,7 +94,7 @@ public class AutoHomeworkScheduleService {
 
         List<AppUser> students = userMapper.findAllStudents();
         for (AppUser student : students) {
-            if (!shouldAutoSubmit(today, student.getId())) {
+            if (!shouldAutoSubmit(date, student.getId())) {
                 continue;
             }
             if (activityMapper.countHomeworkSubmitted(task.getId(), student.getId()) > 0) {
