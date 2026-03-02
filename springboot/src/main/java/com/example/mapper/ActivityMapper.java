@@ -79,13 +79,30 @@ public interface ActivityMapper {
     List<Map<String, Object>> featureRowsByDate(LocalDate date);
 
     @Select("""
-            select student_id as studentId,
-                   login_count as loginCount,
-                   video_minutes as videoMinutes,
-                   homework_submitted as homeworkSubmitted,
-                   avg_score as avgScore
-            from student_daily_activity
-            where activity_date between #{startDate} and #{endDate}
+            select a.student_id as studentId,
+                   a.login_count as loginCount,
+                   a.video_minutes as videoMinutes,
+                   a.homework_submitted as homeworkSubmitted,
+                   a.avg_score as avgScore,
+                   ifnull(ex.exam_count,0) as examCount,
+                   ifnull(ex.pass_count,0) as examPassCount,
+                   ifnull(vw.watch_time,0) as rawWatchSeconds,
+                   a.activity_date as activityDate
+            from student_daily_activity a
+            left join (
+               select student_id, date(submitted_at) as day_key,
+                      count(1) as exam_count,
+                      sum(case when is_passed=1 then 1 else 0 end) as pass_count
+               from exam_submission
+               group by student_id, date(submitted_at)
+            ) ex on a.student_id = ex.student_id and a.activity_date = ex.day_key
+            left join (
+               select student_id, date(last_watched_at) as day_key,
+                      sum(watch_time) as watch_time
+               from video_watch_record
+               group by student_id, date(last_watched_at)
+            ) vw on a.student_id = vw.student_id and a.activity_date = vw.day_key
+            where a.activity_date between #{startDate} and #{endDate}
             """)
     List<Map<String, Object>> historicalFeatures(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
