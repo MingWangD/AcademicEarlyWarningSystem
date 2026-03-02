@@ -52,6 +52,9 @@ public interface ActivityMapper {
     @Insert("insert into student_daily_activity(student_id,activity_date,avg_score) values(#{studentId},curdate(),#{score}) on duplicate key update avg_score=case when avg_score=0 then #{score} else (avg_score+#{score})/2 end")
     int upsertDailyExam(@Param("studentId") Long studentId, @Param("score") Integer score);
 
+    @Insert("insert into student_daily_activity(student_id,activity_date,login_count) values(#{studentId},curdate(),1) on duplicate key update login_count=login_count+1")
+    int upsertDailyLogin(@Param("studentId") Long studentId);
+
     @Select("select u.id as studentId,u.name as studentName,ifnull(a.login_count,0) as loginCount,ifnull(a.video_minutes,0) as videoMinutes,ifnull(a.homework_submitted,0) as homeworkSubmitted,ifnull(a.avg_score,0) as avgScore from user u left join student_daily_activity a on u.id=a.student_id and a.activity_date=#{date} where u.role='STUDENT'")
     List<Map<String,Object>> activitySummary(LocalDate date);
 
