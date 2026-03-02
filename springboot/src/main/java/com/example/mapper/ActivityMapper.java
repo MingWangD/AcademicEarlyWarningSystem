@@ -52,6 +52,9 @@ public interface ActivityMapper {
     @Insert("insert into student_daily_activity(student_id,activity_date,avg_score) values(#{studentId},curdate(),#{score}) on duplicate key update avg_score=case when avg_score=0 then #{score} else (avg_score+#{score})/2 end")
     int upsertDailyExam(@Param("studentId") Long studentId, @Param("score") Integer score);
 
+    @Insert("insert into student_daily_activity(student_id,activity_date,login_count) values(#{studentId},curdate(),1) on duplicate key update login_count=login_count+1")
+    int upsertDailyLogin(@Param("studentId") Long studentId);
+
     @Select("select u.id as studentId,u.name as studentName,ifnull(a.login_count,0) as loginCount,ifnull(a.video_minutes,0) as videoMinutes,ifnull(a.homework_submitted,0) as homeworkSubmitted,ifnull(a.avg_score,0) as avgScore from user u left join student_daily_activity a on u.id=a.student_id and a.activity_date=#{date} where u.role='STUDENT'")
     List<Map<String,Object>> activitySummary(LocalDate date);
 
@@ -79,13 +82,30 @@ public interface ActivityMapper {
     List<Map<String, Object>> featureRowsByDate(LocalDate date);
 
     @Select("""
-            select student_id as studentId,
-                   login_count as loginCount,
-                   video_minutes as videoMinutes,
-                   homework_submitted as homeworkSubmitted,
-                   avg_score as avgScore
-            from student_daily_activity
-            where activity_date between #{startDate} and #{endDate}
+            select a.student_id as studentId,
+                   a.login_count as loginCount,
+                   a.video_minutes as videoMinutes,
+                   a.homework_submitted as homeworkSubmitted,
+                   a.avg_score as avgScore,
+                   ifnull(ex.exam_count,0) as examCount,
+                   ifnull(ex.pass_count,0) as examPassCount,
+                   ifnull(vw.watch_time,0) as rawWatchSeconds,
+                   a.activity_date as activityDate
+            from student_daily_activity a
+            left join (
+               select student_id, date(submitted_at) as day_key,
+                      count(1) as exam_count,
+                      sum(case when is_passed=1 then 1 else 0 end) as pass_count
+               from exam_submission
+               group by student_id, date(submitted_at)
+            ) ex on a.student_id = ex.student_id and a.activity_date = ex.day_key
+            left join (
+               select student_id, date(last_watched_at) as day_key,
+                      sum(watch_time) as watch_time
+               from video_watch_record
+               group by student_id, date(last_watched_at)
+            ) vw on a.student_id = vw.student_id and a.activity_date = vw.day_key
+            where a.activity_date between #{startDate} and #{endDate}
             """)
     List<Map<String, Object>> historicalFeatures(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
