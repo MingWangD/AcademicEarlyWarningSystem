@@ -71,12 +71,12 @@ public class TeacherService {
 
     public Map<String, Object> calculateRisk(LocalDate date) {
         List<Map<String, Object>> features = activityMapper.featureRowsByDate(date);
-        double[] tuned = riskAnalysisService.tuneByCrossValidation(date);
+        RiskAnalysisService.ModelProfile profile = riskAnalysisService.trainModel(date);
 
         int updated = 0;
         for (Map<String, Object> row : features) {
             Long studentId = ((Number) row.get("studentId")).longValue();
-            RiskAnalysisService.RiskResult result = riskAnalysisService.evaluateStudent(row, tuned);
+            RiskAnalysisService.RiskResult result = riskAnalysisService.evaluateStudent(row, profile);
             activityMapper.saveRiskRecord(studentId, date, result.score(), result.level().name(), result.detailJson());
             userMapper.updateRiskLevel(studentId, result.level().name());
             updated++;
@@ -84,13 +84,19 @@ public class TeacherService {
         Map<String, Object> map = new HashMap<>();
         map.put("updatedCount", updated);
         map.put("summary", "已完成每日风险更新");
-        map.put("modelParams", Map.of(
-                "bias", tuned[0],
-                "scoreWeight", tuned[1],
-                "examFailWeight", tuned[2],
-                "homeworkWeight", tuned[3],
-                "videoWeight", tuned[4],
-                "loginWeight", tuned[5]
+        map.put("modelParams", Map.ofEntries(
+                Map.entry("bias", profile.bias()),
+                Map.entry("scoreWeight", profile.weights()[0]),
+                Map.entry("examFailWeight", profile.weights()[1]),
+                Map.entry("homeworkWeight", profile.weights()[2]),
+                Map.entry("videoWeight", profile.weights()[3]),
+                Map.entry("loginWeight", profile.weights()[4]),
+                Map.entry("mediumThreshold", profile.mediumThreshold()),
+                Map.entry("highThreshold", profile.highThreshold()),
+                Map.entry("precision", profile.metrics().precision()),
+                Map.entry("recall", profile.metrics().recall()),
+                Map.entry("f1", profile.metrics().f1()),
+                Map.entry("accuracy", profile.metrics().accuracy())
         ));
         return map;
     }
