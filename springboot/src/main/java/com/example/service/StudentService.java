@@ -129,8 +129,8 @@ public class StudentService {
         if (features == null || features.isEmpty()) {
             return new RiskAnalysisService.RiskResult(0.0, RiskLevel.LOW, "{}");
         }
-        double[] tuned = riskAnalysisService.tuneByCrossValidation(java.time.LocalDate.now());
-        RiskAnalysisService.RiskResult result = riskAnalysisService.evaluateStudent(features, tuned);
+        RiskAnalysisService.ModelProfile profile = riskAnalysisService.trainModel(java.time.LocalDate.now());
+        RiskAnalysisService.RiskResult result = riskAnalysisService.evaluateStudent(features, profile);
         userMapper.updateRiskLevel(studentId, result.level().name());
         activityMapper.saveRiskRecord(studentId, java.time.LocalDate.now(), result.score(), result.level().name(), result.detailJson());
         return result;

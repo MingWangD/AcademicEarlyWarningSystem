@@ -13,6 +13,12 @@
       <el-descriptions-item label="homeworkWeight">{{ result.modelParams.homeworkWeight }}</el-descriptions-item>
       <el-descriptions-item label="videoWeight">{{ result.modelParams.videoWeight }}</el-descriptions-item>
       <el-descriptions-item label="loginWeight">{{ result.modelParams.loginWeight }}</el-descriptions-item>
+      <el-descriptions-item label="mediumThreshold">{{ result.modelParams.mediumThreshold }}</el-descriptions-item>
+      <el-descriptions-item label="highThreshold">{{ result.modelParams.highThreshold }}</el-descriptions-item>
+      <el-descriptions-item label="precision">{{ result.modelParams.precision }}</el-descriptions-item>
+      <el-descriptions-item label="recall">{{ result.modelParams.recall }}</el-descriptions-item>
+      <el-descriptions-item label="f1">{{ result.modelParams.f1 }}</el-descriptions-item>
+      <el-descriptions-item label="accuracy">{{ result.modelParams.accuracy }}</el-descriptions-item>
     </el-descriptions>
   </el-card>
 </template>
