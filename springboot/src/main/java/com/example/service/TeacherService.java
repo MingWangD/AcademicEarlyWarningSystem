@@ -67,7 +67,24 @@ public class TeacherService {
     }
 
     public List<Map<String, Object>> activity(LocalDate date) {
-        return activityMapper.activitySummary(date);
+        List<Map<String, Object>> rows = activityMapper.activitySummary(date);
+        for (Map<String, Object> row : rows) {
+            Long studentId = ((Number) row.get("studentId")).longValue();
+            row.put("credit", studentService.creditOf(studentId));
+        }
+        return rows;
+    }
+
+    public Map<String, Object> info(Long teacherId) {
+        AppUser user = userMapper.findById(teacherId);
+        return Map.of(
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "credit", studentService.creditOf(teacherId)
+        );
     }
 
     public Map<String, Object> info(Long teacherId) {
