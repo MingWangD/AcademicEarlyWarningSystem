@@ -4,7 +4,7 @@
       <div class="hero-content">
         <div>
           <div class="hero-title">学习任务中心</div>
-          <div class="hero-subtitle">完成作业、视频、考试任务后将自动更新你的最新风险评估</div>
+          <div class="hero-subtitle">风险等级由作业与考试成绩折算的学分决定（视频仅记录学习行为）</div>
         </div>
         <el-button type="primary" plain @click="load">刷新任务</el-button>
       </div>
@@ -54,6 +54,18 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <div class="pagination-wrap">
+        <el-pagination
+            v-model:current-page="pageNum"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50]"
+            :total="total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="onSizeChange"
+            @current-change="onPageChange"
+        />
+      </div>
     </el-card>
   </div>
 </template>
@@ -65,7 +77,31 @@ import {ElMessage} from 'element-plus'
 import router from '@/router'
 
 const tasks = ref([])
-const load = () => request.get('/api/v1/student/tasks').then(res => tasks.value = res.data || [])
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+const load = () => request.get('/api/v1/student/tasks', {
+  params: {
+    pageNum: pageNum.value,
+    pageSize: pageSize.value
+  }
+}).then(res => {
+  const payload = res?.data || {}
+  tasks.value = payload.list || []
+  total.value = payload.total || 0
+})
+
+const onPageChange = (val) => {
+  pageNum.value = val
+  load()
+}
+
+const onSizeChange = (val) => {
+  pageSize.value = val
+  pageNum.value = 1
+  load()
+}
 
 const typeLabel = (type) => ({homework: '作业', video: '视频', exam: '考试'}[type] || type)
 const taskTypeTag = (type) => ({homework: 'primary', video: 'success', exam: 'warning'}[type] || 'info')
@@ -75,7 +111,8 @@ const goHomework = (taskId) => router.push(`/portal/student/homework/${taskId}`)
 const goExam = (taskId) => router.push(`/portal/student/exam/${taskId}`)
 const watchVideo = (row) => request.post('/api/v1/student/video/watch', {videoId: row.taskId, watchTime: 600}).then((res)=>{
   const riskLevel = res?.data?.riskLevel || 'LOW'
-  ElMessage.success(`视频学习进度已记录，最新风险等级 ${riskLevel}`)
+  const credit = Number(res?.data?.credit || 0).toFixed(2)
+  ElMessage.success(`视频学习进度已记录，当前学分 ${credit}，风险等级 ${riskLevel}`)
   load()
 })
 
@@ -86,10 +123,14 @@ onMounted(load)
 .student-tasks-page {
   display: grid;
   gap: 16px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f6f7ff 100%);
+  padding: 4px;
+  border-radius: 14px;
 }
 .hero-card {
   border: none;
-  background: linear-gradient(135deg, #ecf5ff, #f4f9ff);
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 45%, #fae8ff 100%);
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.12);
 }
 .hero-content {
   display: flex;
@@ -110,8 +151,22 @@ onMounted(load)
 .card-header {
   font-size: 16px;
   font-weight: 600;
+  color: #374151;
+}
+.task-table-card {
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+.task-table :deep(.el-table__header-wrapper th) {
+  background: #eef2ff;
+  color: #374151;
 }
 .task-table :deep(.el-tag) {
   font-weight: 600;
+}
+.pagination-wrap {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

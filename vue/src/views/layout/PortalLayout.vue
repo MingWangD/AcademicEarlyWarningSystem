@@ -3,6 +3,7 @@
     <div class="topbar">
       <div class="brand">学业预警系统</div>
       <div class="actions">
+        <el-tag type="success" style="margin-right: 12px">学分 {{ Number(userCredit || 0).toFixed(2) }}</el-tag>
         <el-tag type="primary" style="margin-right: 12px">{{ user.role }}</el-tag>
         <el-button link @click="logout">退出登录</el-button>
       </div>
@@ -81,6 +82,7 @@ const user = JSON.parse(localStorage.getItem('system-user') || '{}')
 const showReminder = ref(false)
 const showHighRiskAlert = ref(false)
 const reminderItems = ref([])
+const userCredit = ref(0)
 
 const formatTaskType = (type) => ({ homework: '作业', video: '视频', exam: '考试' }[type] || '任务')
 
@@ -106,8 +108,8 @@ const buildReminder = (tasks = []) => {
 
 const loadStudentReminder = () => {
   if (user.role !== 'STUDENT') return
-  request.get('/api/v1/student/tasks').then(res => {
-    const tasks = res.data || []
+  request.get('/api/v1/student/tasks', { params: { pageNum: 1, pageSize: 100 } }).then(res => {
+    const tasks = res?.data?.list || []
     const lines = buildReminder(tasks)
     reminderItems.value = lines
     showReminder.value = lines.length > 0
@@ -122,6 +124,18 @@ const loadHighRiskAlert = () => {
   })
 }
 
+const loadUserCredit = () => {
+  if (user.role === 'STUDENT') {
+    return request.get('/api/v1/student/info').then(res => userCredit.value = Number(res?.data?.credit || 0))
+  }
+  if (user.role === 'TEACHER') {
+    return request.get('/api/v1/teacher/info').then(res => userCredit.value = Number(res?.data?.credit || 0))
+  }
+  if (user.role === 'ADMIN') {
+    return request.get('/api/v1/admin/info').then(res => userCredit.value = Number(res?.data?.credit || 0))
+  }
+}
+
 const goTasks = () => {
   showReminder.value = false
   showHighRiskAlert.value = false
@@ -134,6 +148,7 @@ const logout = () => {
 }
 
 onMounted(() => {
+  loadUserCredit()
   loadHighRiskAlert()
   loadStudentReminder()
 })

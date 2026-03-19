@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,14 +25,14 @@ public class TeacherService {
     private final ActivityMapper activityMapper;
     private final UserMapper userMapper;
     private final QuestionMapper questionMapper;
-    private final RiskAnalysisService riskAnalysisService;
+    private final StudentService studentService;
 
-    public TeacherService(TaskMapper taskMapper, ActivityMapper activityMapper, UserMapper userMapper, QuestionMapper questionMapper, RiskAnalysisService riskAnalysisService) {
+    public TeacherService(TaskMapper taskMapper, ActivityMapper activityMapper, UserMapper userMapper, QuestionMapper questionMapper, StudentService studentService) {
         this.taskMapper = taskMapper;
         this.activityMapper = activityMapper;
         this.userMapper = userMapper;
         this.questionMapper = questionMapper;
-        this.riskAnalysisService = riskAnalysisService;
+        this.studentService = studentService;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -66,38 +67,53 @@ public class TeacherService {
     }
 
     public List<Map<String, Object>> activity(LocalDate date) {
-        return activityMapper.activitySummary(date);
+        List<Map<String, Object>> rows = activityMapper.activitySummary(date);
+        for (Map<String, Object> row : rows) {
+            Long studentId = ((Number) row.get("studentId")).longValue();
+            row.put("credit", studentService.creditOf(studentId));
+        }
+        return rows;
+    }
+
+    public Map<String, Object> info(Long teacherId) {
+        AppUser user = userMapper.findById(teacherId);
+        return Map.of(
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "credit", studentService.creditOf(teacherId)
+        );
     }
 
     public Map<String, Object> calculateRisk(LocalDate date) {
         List<Map<String, Object>> features = activityMapper.featureRowsByDate(date);
-        RiskAnalysisService.ModelProfile profile = riskAnalysisService.trainModel(date);
 
         int updated = 0;
+        List<Map<String, Object>> samples = new ArrayList<>();
         for (Map<String, Object> row : features) {
             Long studentId = ((Number) row.get("studentId")).longValue();
-            RiskAnalysisService.RiskResult result = riskAnalysisService.evaluateStudent(row, profile);
-            activityMapper.saveRiskRecord(studentId, date, result.score(), result.level().name(), result.detailJson());
-            userMapper.updateRiskLevel(studentId, result.level().name());
+            double credit = studentService.creditOf(studentId);
+            RiskLevel level = credit >= 3 ? RiskLevel.LOW : (credit >= 2 ? RiskLevel.MEDIUM : RiskLevel.HIGH);
+            double riskScore = Math.round((1 - (credit / 4.0)) * 1000.0) / 1000.0;
+            activityMapper.saveRiskRecord(studentId, date, riskScore, level.name(), String.format("{\"credit\":%.2f}", credit));
+            userMapper.updateRiskLevel(studentId, level.name());
+            samples.add(Map.of("studentId", studentId, "credit", credit, "riskLevel", level.name()));
             updated++;
         }
         Map<String, Object> map = new HashMap<>();
         map.put("updatedCount", updated);
-        map.put("summary", "已完成每日风险更新");
-        map.put("modelParams", Map.ofEntries(
-                Map.entry("bias", profile.bias()),
-                Map.entry("scoreWeight", profile.weights()[0]),
-                Map.entry("examFailWeight", profile.weights()[1]),
-                Map.entry("homeworkWeight", profile.weights()[2]),
-                Map.entry("videoWeight", profile.weights()[3]),
-                Map.entry("loginWeight", profile.weights()[4]),
-                Map.entry("mediumThreshold", profile.mediumThreshold()),
-                Map.entry("highThreshold", profile.highThreshold()),
-                Map.entry("precision", profile.metrics().precision()),
-                Map.entry("recall", profile.metrics().recall()),
-                Map.entry("f1", profile.metrics().f1()),
-                Map.entry("accuracy", profile.metrics().accuracy())
+        map.put("summary", "已按学分规则完成风险更新");
+        map.put("rule", Map.of(
+                "homeworkWeight", 0.4,
+                "examWeight", 0.6,
+                "totalCredit", 4,
+                "lowRange", "3~4",
+                "mediumRange", "2~3",
+                "highRange", "<2"
         ));
+        map.put("sample", samples.stream().limit(5).toList());
         return map;
     }
 

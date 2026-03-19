@@ -29,6 +29,11 @@ public class TeacherController {
         return ApiResponse.ok(teacherService.activity(date == null ? LocalDate.now() : date));
     }
 
+    @GetMapping("/info")
+    public ApiResponse<?> info(Authentication auth) {
+        return ApiResponse.ok(teacherService.info(extractUid(auth)));
+    }
+
     @PostMapping("/risk/calc")
     public ApiResponse<?> calc(@RequestBody StudentRequests.RiskCalcRequest request) {
         LocalDate date = request.getDate() == null ? LocalDate.now() : request.getDate();
@@ -36,7 +41,9 @@ public class TeacherController {
     }
 
     @GetMapping("/dashboard")
-    public ApiResponse<?> dashboard() { return ApiResponse.ok(teacherService.dashboard()); }
+    public ApiResponse<?> dashboard() {
+        return ApiResponse.ok(teacherService.dashboard());
+    }
     private Long extractUid(Authentication auth) {
         Object details = auth.getDetails();
         if (details instanceof io.jsonwebtoken.Claims claims) {
