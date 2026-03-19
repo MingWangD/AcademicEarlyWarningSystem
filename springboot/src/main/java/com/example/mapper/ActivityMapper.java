@@ -41,6 +41,12 @@ public interface ActivityMapper {
     @Select("select count(1) from exam_submission where exam_id=#{taskId} and student_id=#{studentId}")
     int countExamSubmitted(@Param("taskId") Long taskId, @Param("studentId") Long studentId);
 
+    @Select("select ifnull(avg(score),0) from homework_submission where student_id=#{studentId}")
+    Double avgHomeworkScore(@Param("studentId") Long studentId);
+
+    @Select("select ifnull(avg(score),0) from exam_submission where student_id=#{studentId}")
+    Double avgExamScore(@Param("studentId") Long studentId);
+
 
 
     @Insert("insert into student_daily_activity(student_id,activity_date,homework_submitted,avg_score) values(#{studentId},curdate(),1,#{score}) on duplicate key update homework_submitted=homework_submitted+1, avg_score=case when avg_score=0 then #{score} else (avg_score+#{score})/2 end")

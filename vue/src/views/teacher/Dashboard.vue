@@ -1,8 +1,9 @@
 <template>
   <el-row :gutter="12" class="card-row">
-    <el-col :xs="24" :sm="8"><el-card><template #header>高风险学生</template><div class="num high">{{ summary.highCount || 0 }}</div></el-card></el-col>
-    <el-col :xs="24" :sm="8"><el-card><template #header>中风险学生</template><div class="num med">{{ summary.mediumCount || 0 }}</div></el-card></el-col>
-    <el-col :xs="24" :sm="8"><el-card><template #header>低风险学生</template><div class="num low">{{ summary.lowCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>高风险学生</template><div class="num high">{{ summary.highCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>中风险学生</template><div class="num med">{{ summary.mediumCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>低风险学生</template><div class="num low">{{ summary.lowCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>我的学分</template><div class="num">{{ Number(summary.myCredit || 0).toFixed(2) }}</div></el-card></el-col>
   </el-row>
 
   <el-card style="margin-top:12px">
@@ -103,5 +104,9 @@ onMounted(() => request.get('/api/v1/teacher/dashboard').then(res => Object.assi
 .num{font-size: 30px;font-weight:700}
 .high{color:#d03050}.med{color:#e6a23c}.low{color:#67c23a}
 .card-row :deep(.el-card){margin-bottom:12px}
+.card-row :deep(.el-card:nth-child(1)){background: linear-gradient(135deg, #fee2e2, #fff1f2);}
+.card-row :deep(.el-card:nth-child(2)){background: linear-gradient(135deg, #fef3c7, #fffbeb);}
+.card-row :deep(.el-card:nth-child(3)){background: linear-gradient(135deg, #dcfce7, #f0fdf4);}
+.card-row :deep(.el-card:nth-child(4)){background: linear-gradient(135deg, #dbeafe, #eef2ff);}
 .pager-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
 </style>
