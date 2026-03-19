@@ -5,6 +5,7 @@ import com.example.entity.AppUser;
 import com.example.mapper.ActivityMapper;
 import com.example.service.AdminUserService;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,6 +25,11 @@ public class AdminControllerV1 {
         return ApiResponse.ok(adminUserService.list(pageNum, pageSize));
     }
 
+    @GetMapping("/info")
+    public ApiResponse<?> info(Authentication auth) {
+        return ApiResponse.ok(adminUserService.info(extractUid(auth)));
+    }
+
     @PostMapping("/user")
     public ApiResponse<?> create(@RequestBody AppUser user) { return ApiResponse.ok(adminUserService.create(user)); }
 
@@ -37,5 +43,15 @@ public class AdminControllerV1 {
     }
 
     @GetMapping("/dashboard")
-    public ApiResponse<?> dashboard() { return ApiResponse.ok(adminUserService.dashboard(activityMapper)); }
+    public ApiResponse<?> dashboard(Authentication auth) {
+        return ApiResponse.ok(adminUserService.dashboard(activityMapper, extractUid(auth)));
+    }
+
+    private Long extractUid(Authentication auth) {
+        Object details = auth.getDetails();
+        if (details instanceof io.jsonwebtoken.Claims claims) {
+            return ((Number) claims.get("uid")).longValue();
+        }
+        return 1L;
+    }
 }

@@ -6,19 +6,13 @@
       <el-button type="primary" @click="calc">立即计算</el-button>
     </div>
     <el-result v-if="result" icon="success" title="计算完成" :sub-title="`更新人数: ${result.updatedCount}，${result.summary}`"/>
-    <el-descriptions v-if="result?.modelParams" :column="2" border title="本次模型参数（CV 选择）">
-      <el-descriptions-item label="bias">{{ result.modelParams.bias }}</el-descriptions-item>
-      <el-descriptions-item label="scoreWeight">{{ result.modelParams.scoreWeight }}</el-descriptions-item>
-      <el-descriptions-item label="examFailWeight">{{ result.modelParams.examFailWeight }}</el-descriptions-item>
-      <el-descriptions-item label="homeworkWeight">{{ result.modelParams.homeworkWeight }}</el-descriptions-item>
-      <el-descriptions-item label="videoWeight">{{ result.modelParams.videoWeight }}</el-descriptions-item>
-      <el-descriptions-item label="loginWeight">{{ result.modelParams.loginWeight }}</el-descriptions-item>
-      <el-descriptions-item label="mediumThreshold">{{ result.modelParams.mediumThreshold }}</el-descriptions-item>
-      <el-descriptions-item label="highThreshold">{{ result.modelParams.highThreshold }}</el-descriptions-item>
-      <el-descriptions-item label="precision">{{ result.modelParams.precision }}</el-descriptions-item>
-      <el-descriptions-item label="recall">{{ result.modelParams.recall }}</el-descriptions-item>
-      <el-descriptions-item label="f1">{{ result.modelParams.f1 }}</el-descriptions-item>
-      <el-descriptions-item label="accuracy">{{ result.modelParams.accuracy }}</el-descriptions-item>
+    <el-descriptions v-if="result?.rule" :column="2" border title="学分风险规则">
+      <el-descriptions-item label="作业权重">{{ result.rule.homeworkWeight }}</el-descriptions-item>
+      <el-descriptions-item label="考试权重">{{ result.rule.examWeight }}</el-descriptions-item>
+      <el-descriptions-item label="总学分">{{ result.rule.totalCredit }}</el-descriptions-item>
+      <el-descriptions-item label="LOW 区间">{{ result.rule.lowRange }}</el-descriptions-item>
+      <el-descriptions-item label="MEDIUM 区间">{{ result.rule.mediumRange }}</el-descriptions-item>
+      <el-descriptions-item label="HIGH 区间">{{ result.rule.highRange }}</el-descriptions-item>
     </el-descriptions>
   </el-card>
 </template>
