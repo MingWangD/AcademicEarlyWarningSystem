@@ -74,19 +74,6 @@ public class TeacherService {
         }
         return rows;
     }
-
-    public Map<String, Object> info(Long teacherId) {
-        AppUser user = userMapper.findById(teacherId);
-        return Map.of(
-                "id", user.getId(),
-                "username", user.getUsername(),
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "role", user.getRole(),
-                "credit", studentService.creditOf(teacherId)
-        );
-    }
-
     public Map<String, Object> info(Long teacherId) {
         AppUser user = userMapper.findById(teacherId);
         return Map.of(
