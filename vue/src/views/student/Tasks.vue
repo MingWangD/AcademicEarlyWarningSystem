@@ -123,10 +123,14 @@ onMounted(load)
 .student-tasks-page {
   display: grid;
   gap: 16px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f6f7ff 100%);
+  padding: 4px;
+  border-radius: 14px;
 }
 .hero-card {
   border: none;
-  background: linear-gradient(135deg, #ecf5ff, #f4f9ff);
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 45%, #fae8ff 100%);
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.12);
 }
 .hero-content {
   display: flex;
@@ -147,6 +151,15 @@ onMounted(load)
 .card-header {
   font-size: 16px;
   font-weight: 600;
+  color: #374151;
+}
+.task-table-card {
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+.task-table :deep(.el-table__header-wrapper th) {
+  background: #eef2ff;
+  color: #374151;
 }
 .task-table :deep(.el-tag) {
   font-weight: 600;
