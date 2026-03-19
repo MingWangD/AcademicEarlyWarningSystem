@@ -117,7 +117,7 @@ public class TeacherService {
         return map;
     }
 
-    public Map<String, Object> dashboard() {
+    public Map<String, Object> dashboard(Long teacherId) {
         List<AppUser> students = userMapper.findAllStudents();
         long high = students.stream().filter(u -> u.getRiskLevel() == RiskLevel.HIGH).count();
         long medium = students.stream().filter(u -> u.getRiskLevel() == RiskLevel.MEDIUM).count();
@@ -136,7 +136,8 @@ public class TeacherService {
                 "mediumCount", medium,
                 "lowCount", low,
                 "totalStudents", students.size(),
-                "refreshedAt", latestCalcDate == null ? "-" : latestCalcDate.toString()
+                "refreshedAt", latestCalcDate == null ? "-" : latestCalcDate.toString(),
+                "myCredit", studentService.creditOf(teacherId)
         ));
         return data;
     }

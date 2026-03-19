@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="topbar">
-      <div class="brand">学业预警系统</div>
+      <div class="brand">学情预警系统</div>
       <div class="actions">
         <el-tag type="success" style="margin-right: 12px">学分 {{ Number(userCredit || 0).toFixed(2) }}</el-tag>
         <el-tag type="primary" style="margin-right: 12px">{{ user.role }}</el-tag>

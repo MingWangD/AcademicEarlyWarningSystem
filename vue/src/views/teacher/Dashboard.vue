@@ -1,8 +1,9 @@
 <template>
   <el-row :gutter="12" class="card-row">
-    <el-col :xs="24" :sm="8"><el-card><template #header>高风险学生</template><div class="num high">{{ summary.highCount || 0 }}</div></el-card></el-col>
-    <el-col :xs="24" :sm="8"><el-card><template #header>中风险学生</template><div class="num med">{{ summary.mediumCount || 0 }}</div></el-card></el-col>
-    <el-col :xs="24" :sm="8"><el-card><template #header>低风险学生</template><div class="num low">{{ summary.lowCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>高风险学生</template><div class="num high">{{ summary.highCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>中风险学生</template><div class="num med">{{ summary.mediumCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>低风险学生</template><div class="num low">{{ summary.lowCount || 0 }}</div></el-card></el-col>
+    <el-col :xs="24" :sm="6"><el-card><template #header>我的学分</template><div class="num">{{ Number(summary.myCredit || 0).toFixed(2) }}</div></el-card></el-col>
   </el-row>
 
   <el-card style="margin-top:12px">
