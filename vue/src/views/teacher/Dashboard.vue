@@ -107,6 +107,5 @@ onMounted(() => request.get('/api/v1/teacher/dashboard').then(res => Object.assi
 .card-row :deep(.el-card:nth-child(1)){background: linear-gradient(135deg, #fee2e2, #fff1f2);}
 .card-row :deep(.el-card:nth-child(2)){background: linear-gradient(135deg, #fef3c7, #fffbeb);}
 .card-row :deep(.el-card:nth-child(3)){background: linear-gradient(135deg, #dcfce7, #f0fdf4);}
-.card-row :deep(.el-card:nth-child(4)){background: linear-gradient(135deg, #dbeafe, #eef2ff);}
 .pager-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
 </style>

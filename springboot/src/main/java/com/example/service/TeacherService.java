@@ -74,6 +74,7 @@ public class TeacherService {
         }
         return rows;
     }
+
     public Map<String, Object> info(Long teacherId) {
         AppUser user = userMapper.findById(teacherId);
         return Map.of(

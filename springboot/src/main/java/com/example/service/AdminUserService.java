@@ -26,6 +26,11 @@ public class AdminUserService {
     public Map<String, Object> list(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
         List<AppUser> records = userMapper.findPage(offset, pageSize);
+        records.forEach(user -> {
+            if (!"STUDENT".equals(String.valueOf(user.getRole()))) {
+                user.setRiskLevel(null);
+            }
+        });
         long total = userMapper.countAll();
         Map<String, Object> result = new HashMap<>();
         result.put("records", records);

@@ -41,8 +41,8 @@ public class TeacherController {
     }
 
     @GetMapping("/dashboard")
-    public ApiResponse<?> dashboard(Authentication auth) {
-        return ApiResponse.ok(teacherService.dashboard(extractUid(auth)));
+    public ApiResponse<?> dashboard() {
+        return ApiResponse.ok(teacherService.dashboard());
     }
     private Long extractUid(Authentication auth) {
         Object details = auth.getDetails();
