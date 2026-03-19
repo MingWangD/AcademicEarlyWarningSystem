@@ -15,26 +15,41 @@ import java.util.*;
 
 @Service
 public class StudentService {
+    private static final double HOMEWORK_WEIGHT = 0.4;
+    private static final double EXAM_WEIGHT = 0.6;
+    private static final double TOTAL_CREDIT = 4.0;
+
     private final UserMapper userMapper;
     private final TaskMapper taskMapper;
     private final ActivityMapper activityMapper;
     private final QuestionMapper questionMapper;
-    private final RiskAnalysisService riskAnalysisService;
 
-    public StudentService(UserMapper userMapper, TaskMapper taskMapper, ActivityMapper activityMapper, QuestionMapper questionMapper, RiskAnalysisService riskAnalysisService) {
+    public StudentService(UserMapper userMapper, TaskMapper taskMapper, ActivityMapper activityMapper, QuestionMapper questionMapper) {
         this.userMapper = userMapper;
         this.taskMapper = taskMapper;
         this.activityMapper = activityMapper;
         this.questionMapper = questionMapper;
-        this.riskAnalysisService = riskAnalysisService;
     }
 
-    public AppUser getInfo(Long studentId) {
-        return userMapper.findById(studentId);
+    public Map<String, Object> getInfo(Long studentId) {
+        AppUser user = userMapper.findById(studentId);
+        RiskSnapshot snapshot = refreshRiskLevel(studentId);
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", user.getId());
+        map.put("username", user.getUsername());
+        map.put("email", user.getEmail());
+        map.put("name", user.getName());
+        map.put("role", user.getRole());
+        map.put("riskLevel", snapshot.riskLevel().name());
+        map.put("credit", snapshot.credit());
+        return map;
     }
 
-    public List<Map<String, Object>> getTasks(Long studentId) {
-        List<Task> tasks = taskMapper.findAll();
+    public Map<String, Object> getTasks(Long studentId, Integer pageNum, Integer pageSize) {
+        int safePageNum = pageNum == null || pageNum < 1 ? 1 : pageNum;
+        int safePageSize = pageSize == null || pageSize < 1 ? 10 : Math.min(pageSize, 100);
+        int offset = (safePageNum - 1) * safePageSize;
+        List<Task> tasks = taskMapper.findPage(safePageSize, offset);
         List<Map<String, Object>> result = new ArrayList<>();
         for (Task task : tasks) {
             Map<String, Object> item = new LinkedHashMap<>();
@@ -46,7 +61,13 @@ public class StudentService {
             item.put("status", taskStatus(studentId, task));
             result.add(item);
         }
-        return result;
+        long total = taskMapper.countAll();
+        return Map.of(
+                "list", result,
+                "total", total,
+                "pageNum", safePageNum,
+                "pageSize", safePageSize
+        );
     }
 
     private String taskStatus(Long studentId, Task task) {
@@ -78,24 +99,26 @@ public class StudentService {
         int score = scoreByAnswers(taskId, answers, 5);
         activityMapper.submitHomework(taskId, studentId, JSONUtil.toJsonStr(answers), score);
         activityMapper.upsertDailyHomework(studentId, score);
-        RiskAnalysisService.RiskResult riskResult = refreshRiskLevel(studentId);
+        RiskSnapshot riskResult = refreshRiskLevel(studentId);
         return Map.of(
                 "success", true,
                 "score", score,
                 "isPassed", score >= 60,
-                "riskLevel", riskResult.level().name(),
-                "riskScore", riskResult.score()
+                "riskLevel", riskResult.riskLevel().name(),
+                "riskScore", riskResult.riskScore(),
+                "credit", riskResult.credit()
         );
     }
 
     public Map<String, Object> watchVideo(Long studentId, Long videoId, Integer watchTime) {
         activityMapper.upsertVideoWatch(videoId, studentId, watchTime);
         activityMapper.upsertDailyVideo(studentId, Math.max(1, watchTime / 60));
-        RiskAnalysisService.RiskResult riskResult = refreshRiskLevel(studentId);
+        RiskSnapshot riskResult = refreshRiskLevel(studentId);
         return Map.of(
                 "success", true,
-                "riskLevel", riskResult.level().name(),
-                "riskScore", riskResult.score()
+                "riskLevel", riskResult.riskLevel().name(),
+                "riskScore", riskResult.riskScore(),
+                "credit", riskResult.credit()
         );
     }
 
@@ -114,26 +137,33 @@ public class StudentService {
         boolean isPassed = score >= 60;
         activityMapper.submitExam(taskId, studentId, JSONUtil.toJsonStr(answers), score, isPassed);
         activityMapper.upsertDailyExam(studentId, score);
-        RiskAnalysisService.RiskResult riskResult = refreshRiskLevel(studentId);
+        RiskSnapshot riskResult = refreshRiskLevel(studentId);
         return Map.of(
                 "success", true,
                 "score", score,
                 "isPassed", isPassed,
-                "riskLevel", riskResult.level().name(),
-                "riskScore", riskResult.score()
+                "riskLevel", riskResult.riskLevel().name(),
+                "riskScore", riskResult.riskScore(),
+                "credit", riskResult.credit()
         );
     }
 
-    private RiskAnalysisService.RiskResult refreshRiskLevel(Long studentId) {
-        Map<String, Object> features = activityMapper.studentFeatureByDate(studentId, java.time.LocalDate.now());
-        if (features == null || features.isEmpty()) {
-            return new RiskAnalysisService.RiskResult(0.0, RiskLevel.LOW, "{}");
-        }
-        RiskAnalysisService.ModelProfile profile = riskAnalysisService.trainModel(java.time.LocalDate.now());
-        RiskAnalysisService.RiskResult result = riskAnalysisService.evaluateStudent(features, profile);
-        userMapper.updateRiskLevel(studentId, result.level().name());
-        activityMapper.saveRiskRecord(studentId, java.time.LocalDate.now(), result.score(), result.level().name(), result.detailJson());
-        return result;
+    public double creditOf(Long userId) {
+        Double homeworkAvg = Optional.ofNullable(activityMapper.avgHomeworkScore(userId)).orElse(0d);
+        Double examAvg = Optional.ofNullable(activityMapper.avgExamScore(userId)).orElse(0d);
+        double weightedScore = homeworkAvg * HOMEWORK_WEIGHT + examAvg * EXAM_WEIGHT;
+        double credit = (weightedScore / 100.0) * TOTAL_CREDIT;
+        return Math.round(Math.max(0d, Math.min(TOTAL_CREDIT, credit)) * 100.0) / 100.0;
+    }
+
+    private RiskSnapshot refreshRiskLevel(Long studentId) {
+        double credit = creditOf(studentId);
+        RiskLevel level = credit >= 3 ? RiskLevel.LOW : (credit >= 2 ? RiskLevel.MEDIUM : RiskLevel.HIGH);
+        double riskScore = Math.round((1 - (credit / TOTAL_CREDIT)) * 1000.0) / 1000.0;
+        userMapper.updateRiskLevel(studentId, level.name());
+        String detailJson = String.format("{\"credit\":%.2f,\"homeworkWeight\":%.1f,\"examWeight\":%.1f}", credit, HOMEWORK_WEIGHT, EXAM_WEIGHT);
+        activityMapper.saveRiskRecord(studentId, java.time.LocalDate.now(), riskScore, level.name(), detailJson);
+        return new RiskSnapshot(credit, riskScore, level);
     }
 
     private int scoreByAnswers(Long taskId, Map<String, String> answers, int totalCount) {
@@ -150,4 +180,6 @@ public class StudentService {
         }
         return (int) Math.round((correct * 100.0) / Math.max(totalCount, questions.size()));
     }
+
+    public record RiskSnapshot(double credit, double riskScore, RiskLevel riskLevel) {}
 }

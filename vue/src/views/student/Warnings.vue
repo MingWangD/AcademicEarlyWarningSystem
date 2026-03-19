@@ -5,8 +5,9 @@
       <el-descriptions-item label="当前风险等级">
         <el-tag :type="tagType(info.riskLevel)">{{ info.riskLevel || 'LOW' }}</el-tag>
       </el-descriptions-item>
-      <el-descriptions-item label="预警说明">请按时完成任务并保持稳定学习行为。</el-descriptions-item>
-      <el-descriptions-item label="建议">高风险同学建议联系教师制定辅导计划；中风险建议提高作业完成率。</el-descriptions-item>
+      <el-descriptions-item label="当前学分">{{ Number(info.credit || 0).toFixed(2) }} / 4.00</el-descriptions-item>
+      <el-descriptions-item label="学分规则">学分 = 作业均分×40% + 考试均分×60%，再按满分 4 分折算。</el-descriptions-item>
+      <el-descriptions-item label="风险规则">学分 3~4 为 LOW，2~3 为 MEDIUM，低于 2 为 HIGH。</el-descriptions-item>
     </el-descriptions>
   </el-card>
 </template>

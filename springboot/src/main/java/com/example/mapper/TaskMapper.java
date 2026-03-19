@@ -11,8 +11,11 @@ public interface TaskMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Task task);
 
-    @Select("select id,course_id,type,title,details,due_date,created_by from task order by due_date asc")
-    List<Task> findAll();
+    @Select("select id,course_id,type,title,details,due_date,created_by from task order by id desc limit #{limit} offset #{offset}")
+    List<Task> findPage(@Param("limit") Integer limit, @Param("offset") Integer offset);
+
+    @Select("select count(1) from task")
+    long countAll();
 
     @Select("select id,course_id,type,title,details,due_date,created_by from task where id=#{id}")
     Task findById(Long id);

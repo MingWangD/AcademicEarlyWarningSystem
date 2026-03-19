@@ -6,7 +6,13 @@
         <div class="big">{{ data.totalStudents || 0 }}</div>
       </el-card>
     </el-col>
-    <el-col :xs="24" :sm="16">
+    <el-col :xs="24" :sm="8">
+      <el-card>
+        <template #header>我的学分</template>
+        <div class="big">{{ Number(data.myCredit || 0).toFixed(2) }}</div>
+      </el-card>
+    </el-col>
+    <el-col :xs="24" :sm="8">
       <el-card>
         <template #header>风险分布（饼图）</template>
         <div class="pie-wrap">
