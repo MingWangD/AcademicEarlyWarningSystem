@@ -32,7 +32,10 @@ const taskId = Number(route.params.taskId)
 const questions = ref([])
 const answers = reactive({})
 onMounted(()=>request.get(`/api/v1/student/homework/${taskId}/questions`).then(res=>questions.value=res.data||[]))
-const submit = () => request.post('/api/v1/student/homework/submit', {taskId, answers}).then(res => {ElMessage.success(`提交成功，得分 ${res.data.score}，最新风险等级 ${res.data.riskLevel || 'LOW'}`); router.push('/portal/student/tasks')})
+const submit = () => request.post('/api/v1/student/homework/submit', {taskId, answers}).then(res => {
+  ElMessage.success(`提交成功，得分 ${res.data.score}，学分 ${Number(res.data.credit || 0).toFixed(2)}，风险等级 ${res.data.riskLevel || 'LOW'}`)
+  router.push('/portal/student/tasks')
+})
 </script>
 
 <style scoped>

@@ -15,10 +15,12 @@ import java.util.Map;
 public class AdminUserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final StudentService studentService;
 
-    public AdminUserService(UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public AdminUserService(UserMapper userMapper, PasswordEncoder passwordEncoder, StudentService studentService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.studentService = studentService;
     }
 
     public Map<String, Object> list(int pageNum, int pageSize) {
@@ -49,7 +51,19 @@ public class AdminUserService {
         userMapper.deleteById(id);
     }
 
-    public Map<String, Object> dashboard(ActivityMapper activityMapper) {
+    public Map<String, Object> info(Long userId) {
+        AppUser user = userMapper.findById(userId);
+        return Map.of(
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "credit", studentService.creditOf(userId)
+        );
+    }
+
+    public Map<String, Object> dashboard(ActivityMapper activityMapper, Long userId) {
         Map<String, Object> map = new HashMap<>();
         map.put("riskDistribution", activityMapper.latestRiskDistribution());
         map.put("riskTrend", activityMapper.riskTrend());
@@ -57,6 +71,7 @@ public class AdminUserService {
         map.put("totalUsers", userMapper.countAll());
         map.put("totalStudents", userMapper.countByRole("STUDENT"));
         map.put("refreshedAt", activityMapper.latestRiskCalcDate());
+        map.put("myCredit", studentService.creditOf(userId));
         return map;
     }
 }

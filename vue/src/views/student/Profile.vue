@@ -14,6 +14,9 @@
       <el-form-item label="风险等级">
         <el-tag :type="tagType(form.riskLevel)">{{ form.riskLevel || 'LOW' }}</el-tag>
       </el-form-item>
+      <el-form-item label="当前学分">
+        <el-tag type="success">{{ Number(form.credit || 0).toFixed(2) }}</el-tag>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="save">保存信息</el-button>
       </el-form-item>

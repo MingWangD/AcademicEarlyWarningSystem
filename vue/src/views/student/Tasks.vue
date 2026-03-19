@@ -4,7 +4,7 @@
       <div class="hero-content">
         <div>
           <div class="hero-title">学习任务中心</div>
-          <div class="hero-subtitle">完成作业、视频、考试任务后将自动更新你的最新风险评估</div>
+          <div class="hero-subtitle">风险等级由作业与考试成绩折算的学分决定（视频仅记录学习行为）</div>
         </div>
         <el-button type="primary" plain @click="load">刷新任务</el-button>
       </div>
@@ -111,7 +111,8 @@ const goHomework = (taskId) => router.push(`/portal/student/homework/${taskId}`)
 const goExam = (taskId) => router.push(`/portal/student/exam/${taskId}`)
 const watchVideo = (row) => request.post('/api/v1/student/video/watch', {videoId: row.taskId, watchTime: 600}).then((res)=>{
   const riskLevel = res?.data?.riskLevel || 'LOW'
-  ElMessage.success(`视频学习进度已记录，最新风险等级 ${riskLevel}`)
+  const credit = Number(res?.data?.credit || 0).toFixed(2)
+  ElMessage.success(`视频学习进度已记录，当前学分 ${credit}，风险等级 ${riskLevel}`)
   load()
 })
 
