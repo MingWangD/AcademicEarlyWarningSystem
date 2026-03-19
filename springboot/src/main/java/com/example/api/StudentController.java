@@ -24,9 +24,11 @@ public class StudentController {
     }
 
     @GetMapping("/tasks")
-    public ApiResponse<?> tasks(Authentication auth) {
+    public ApiResponse<?> tasks(Authentication auth,
+                                @RequestParam(value = "pageNum", required = false) Integer pageNum,
+                                @RequestParam(value = "pageSize", required = false) Integer pageSize) {
         Long uid = extractUid(auth);
-        return ApiResponse.ok(studentService.getTasks(uid));
+        return ApiResponse.ok(studentService.getTasks(uid, pageNum, pageSize));
     }
 
     @GetMapping("/homework/{taskId}/questions")
