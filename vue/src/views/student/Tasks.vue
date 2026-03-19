@@ -54,6 +54,18 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <div class="pagination-wrap">
+        <el-pagination
+            v-model:current-page="pageNum"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50]"
+            :total="total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="onSizeChange"
+            @current-change="onPageChange"
+        />
+      </div>
     </el-card>
   </div>
 </template>
@@ -65,7 +77,31 @@ import {ElMessage} from 'element-plus'
 import router from '@/router'
 
 const tasks = ref([])
-const load = () => request.get('/api/v1/student/tasks').then(res => tasks.value = res.data || [])
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+const load = () => request.get('/api/v1/student/tasks', {
+  params: {
+    pageNum: pageNum.value,
+    pageSize: pageSize.value
+  }
+}).then(res => {
+  const payload = res?.data || {}
+  tasks.value = payload.list || []
+  total.value = payload.total || 0
+})
+
+const onPageChange = (val) => {
+  pageNum.value = val
+  load()
+}
+
+const onSizeChange = (val) => {
+  pageSize.value = val
+  pageNum.value = 1
+  load()
+}
 
 const typeLabel = (type) => ({homework: '作业', video: '视频', exam: '考试'}[type] || type)
 const taskTypeTag = (type) => ({homework: 'primary', video: 'success', exam: 'warning'}[type] || 'info')
@@ -113,5 +149,10 @@ onMounted(load)
 }
 .task-table :deep(.el-tag) {
   font-weight: 600;
+}
+.pagination-wrap {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

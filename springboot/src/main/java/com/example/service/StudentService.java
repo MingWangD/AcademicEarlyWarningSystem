@@ -33,8 +33,11 @@ public class StudentService {
         return userMapper.findById(studentId);
     }
 
-    public List<Map<String, Object>> getTasks(Long studentId) {
-        List<Task> tasks = taskMapper.findAll();
+    public Map<String, Object> getTasks(Long studentId, Integer pageNum, Integer pageSize) {
+        int safePageNum = pageNum == null || pageNum < 1 ? 1 : pageNum;
+        int safePageSize = pageSize == null || pageSize < 1 ? 10 : Math.min(pageSize, 100);
+        int offset = (safePageNum - 1) * safePageSize;
+        List<Task> tasks = taskMapper.findPage(safePageSize, offset);
         List<Map<String, Object>> result = new ArrayList<>();
         for (Task task : tasks) {
             Map<String, Object> item = new LinkedHashMap<>();
@@ -46,7 +49,13 @@ public class StudentService {
             item.put("status", taskStatus(studentId, task));
             result.add(item);
         }
-        return result;
+        long total = taskMapper.countAll();
+        return Map.of(
+                "list", result,
+                "total", total,
+                "pageNum", safePageNum,
+                "pageSize", safePageSize
+        );
     }
 
     private String taskStatus(Long studentId, Task task) {

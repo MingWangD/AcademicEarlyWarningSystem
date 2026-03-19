@@ -106,8 +106,8 @@ const buildReminder = (tasks = []) => {
 
 const loadStudentReminder = () => {
   if (user.role !== 'STUDENT') return
-  request.get('/api/v1/student/tasks').then(res => {
-    const tasks = res.data || []
+  request.get('/api/v1/student/tasks', { params: { pageNum: 1, pageSize: 100 } }).then(res => {
+    const tasks = res?.data?.list || []
     const lines = buildReminder(tasks)
     reminderItems.value = lines
     showReminder.value = lines.length > 0
