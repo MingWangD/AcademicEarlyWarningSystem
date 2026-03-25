@@ -16,13 +16,16 @@ public class RiskAnalysisService {
     private static final double L2_LAMBDA = 1e-3;
 
     private final ActivityMapper activityMapper;
+    private final StudentService studentService;
 
-    public RiskAnalysisService(ActivityMapper activityMapper) {
+    public RiskAnalysisService(ActivityMapper activityMapper, StudentService studentService) {
         this.activityMapper = activityMapper;
+        this.studentService = studentService;
     }
 
     public RiskResult evaluateStudent(Map<String, Object> feature, ModelProfile profile) {
-        FeatureVector v = vectorize(feature);
+        Long studentId = feature.get("studentId") == null ? null : ((Number) feature.get("studentId")).longValue();
+        FeatureVector v = vectorize(feature, studentId);
         double[] x = normalize(v.toArray(), profile.means(), profile.stds());
         double z = dot(profile.weights(), x) + profile.bias();
         double score = sigmoid(z);
@@ -36,7 +39,8 @@ public class RiskAnalysisService {
                 "examFailRate", v.examFailRate,
                 "homeworkMissRate", v.homeworkMissRate,
                 "videoMinutes", v.videoMinutes,
-                "loginCount", v.loginCount
+                "loginCount", v.loginCount,
+                "creditCompletionRate", v.creditCompletionRate
         ));
         detail.put("z", z);
         detail.put("threshold", Map.of(
@@ -60,7 +64,8 @@ public class RiskAnalysisService {
 
         double[] means = calcMeans(samples);
         double[] stds = calcStds(samples, means);
-        double[] weights = new double[5];
+        int dimension = samples.get(0).x().length;
+        double[] weights = new double[dimension];
         double bias = 0;
 
         for (int epoch = 0; epoch < TRAIN_EPOCHS; epoch++) {
@@ -116,7 +121,7 @@ public class RiskAnalysisService {
             Map<String, Object> nextDay = byKey.get(sid + "#" + day.plusDays(1));
             if (nextDay == null) continue;
 
-            FeatureVector fv = vectorize(row);
+            FeatureVector fv = vectorize(row, sid);
             int label = deriveLabel(nextDay);
             out.add(new TrainSample(fv.toArray(), label));
         }
@@ -139,26 +144,29 @@ public class RiskAnalysisService {
         return riskSignals >= 2 ? 1 : 0;
     }
 
-    private FeatureVector vectorize(Map<String, Object> feature) {
+    private FeatureVector vectorize(Map<String, Object> feature, Long studentId) {
         double loginCount = Math.max(num(feature.get("loginCount")), 0);
         double videoMinutes = Math.max(num(feature.get("videoMinutes")), num(feature.get("rawWatchSeconds")) / 60.0);
         double homeworkSubmitted = Math.max(num(feature.get("homeworkSubmitted")), 0);
         double avgScore = Math.min(Math.max(num(feature.get("avgScore")), 0), 100);
         double examCount = Math.max(num(feature.get("examCount")), 0);
         double examPassCount = Math.max(num(feature.get("examPassCount")), 0);
+        double creditCompletionRate = studentId == null ? Math.min(Math.max(avgScore / 100.0, 0), 1)
+                : Math.min(Math.max(studentService.creditOf(studentId) / 4.0, 0), 1);
 
         double homeworkMissRate = (homeworkSubmitted + 1) <= 0 ? 1 : Math.max(0, 1 - (homeworkSubmitted / (homeworkSubmitted + 1.0)));
         double examFailRate = examCount > 0 ? Math.max(0, 1 - examPassCount / examCount) : (avgScore < 60 ? 1 : 0);
         double normalizedVideoGap = 1 - Math.min(videoMinutes / 20.0, 1.0);
         double normalizedLoginGap = 1 - Math.min(loginCount / 4.0, 1.0);
         double scoreGap = 1 - avgScore / 100.0;
+        double creditGap = 1 - creditCompletionRate;
 
-        return new FeatureVector(scoreGap, examFailRate, homeworkMissRate, normalizedVideoGap, normalizedLoginGap,
-                avgScore, examFailRate, homeworkMissRate, videoMinutes, loginCount);
+        return new FeatureVector(scoreGap, examFailRate, homeworkMissRate, normalizedVideoGap, normalizedLoginGap, creditGap,
+                avgScore, examFailRate, homeworkMissRate, videoMinutes, loginCount, creditCompletionRate);
     }
 
     private double[] calcMeans(List<TrainSample> samples) {
-        double[] means = new double[5];
+        double[] means = new double[samples.get(0).x().length];
         for (TrainSample s : samples) {
             for (int i = 0; i < means.length; i++) {
                 means[i] += s.x()[i];
@@ -171,7 +179,7 @@ public class RiskAnalysisService {
     }
 
     private double[] calcStds(List<TrainSample> samples, double[] means) {
-        double[] stds = new double[5];
+        double[] stds = new double[means.length];
         for (TrainSample s : samples) {
             for (int i = 0; i < stds.length; i++) {
                 double diff = s.x()[i] - means[i];
@@ -225,10 +233,10 @@ public class RiskAnalysisService {
 
     private ModelProfile defaultProfile() {
         return new ModelProfile(
-                new double[]{2.3, 1.8, 1.1, 1.2, 0.9},
+                new double[]{2.3, 1.8, 1.1, 1.2, 0.9, 2.1},
                 -1.2,
-                new double[]{0, 0, 0, 0, 0},
-                new double[]{1, 1, 1, 1, 1},
+                new double[]{0, 0, 0, 0, 0, 0},
+                new double[]{1, 1, 1, 1, 1, 1},
                 0.45,
                 0.72,
                 new Metrics(0, 0, 0, 0)
@@ -272,12 +280,12 @@ public class RiskAnalysisService {
     }
 
     private record FeatureVector(double scoreGap, double examFailRate, double homeworkMissRate,
-                                 double normalizedVideoGap, double normalizedLoginGap,
+                                 double normalizedVideoGap, double normalizedLoginGap, double creditGap,
                                  double avgScore, double examFailRateDisplay,
-                                 double homeworkMissRateDisplay, double videoMinutes,
-                                 double loginCount) {
+                                 double homeworkMissRateDisplay, double videoMinutes, double loginCount,
+                                 double creditCompletionRate) {
         private double[] toArray() {
-            return new double[]{scoreGap, examFailRate, homeworkMissRate, normalizedVideoGap, normalizedLoginGap};
+            return new double[]{scoreGap, examFailRate, homeworkMissRate, normalizedVideoGap, normalizedLoginGap, creditGap};
         }
     }
 }
