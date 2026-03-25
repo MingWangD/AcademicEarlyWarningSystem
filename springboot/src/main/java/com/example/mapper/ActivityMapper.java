@@ -186,6 +186,22 @@ public interface ActivityMapper {
     List<Map<String,Object>> recentWarningsLast7Days();
 
     @Select("""
+            select rr.calc_date as calcDate,
+                   rr.risk_score as riskScore,
+                   rr.risk_level as riskLevel,
+                   rr.detail_json as detailJson
+            from risk_record rr
+            join (
+                select calc_date, max(id) as latest_id
+                from risk_record
+                where student_id=#{studentId}
+                group by calc_date
+            ) latest on rr.id = latest.latest_id
+            order by rr.calc_date asc
+            """)
+    List<Map<String,Object>> studentRiskHistory(@Param("studentId") Long studentId);
+
+    @Select("""
             select case
                      when count(1)=7 and sum(case when t.riskLevel='HIGH' then 1 else 0 end)=7 then 1
                      else 0

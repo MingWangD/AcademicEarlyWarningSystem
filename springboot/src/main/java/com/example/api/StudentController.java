@@ -59,6 +59,24 @@ public class StudentController {
         return ApiResponse.ok(studentService.highRiskStreak(uid));
     }
 
+    @GetMapping("/credits")
+    public ApiResponse<?> credits(Authentication auth) {
+        Long uid = extractUid(auth);
+        return ApiResponse.ok(studentService.creditSummary(uid));
+    }
+
+    @GetMapping("/credit-risk")
+    public ApiResponse<?> creditRisk(Authentication auth) {
+        Long uid = extractUid(auth);
+        return ApiResponse.ok(studentService.creditRisk(uid));
+    }
+
+    @GetMapping("/credit-trend")
+    public ApiResponse<?> creditTrend(Authentication auth) {
+        Long uid = extractUid(auth);
+        return ApiResponse.ok(studentService.creditTrend(uid));
+    }
+
     @PostMapping("/exam/submit")
     public ApiResponse<?> exam(Authentication auth, @RequestBody StudentRequests.TaskAnswerSubmitRequest request) {
         Long uid = extractUid(auth);
