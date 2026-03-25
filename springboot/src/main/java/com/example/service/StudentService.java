@@ -34,6 +34,7 @@ public class StudentService {
     public Map<String, Object> getInfo(Long studentId) {
         AppUser user = userMapper.findById(studentId);
         RiskSnapshot snapshot = refreshRiskLevel(studentId);
+        Map<String, Object> creditSummary = creditSummary(studentId);
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", user.getId());
         map.put("username", user.getUsername());
@@ -42,7 +43,70 @@ public class StudentService {
         map.put("role", user.getRole());
         map.put("riskLevel", snapshot.riskLevel().name());
         map.put("credit", snapshot.credit());
+        map.put("credits", creditSummary);
         return map;
+    }
+
+    public Map<String, Object> creditSummary(Long studentId) {
+        double earnedCredits = creditOf(studentId);
+        double totalCredits = TOTAL_CREDIT;
+        double completionRate = totalCredits <= 0 ? 0 : earnedCredits / totalCredits;
+        double failedCredits = Math.max(0, totalCredits - earnedCredits);
+        double currentSemesterCredits = Math.round(earnedCredits * 0.5 * 100.0) / 100.0;
+        double homeworkAvg = Optional.ofNullable(activityMapper.avgHomeworkScore(studentId)).orElse(0d);
+        double examAvg = Optional.ofNullable(activityMapper.avgExamScore(studentId)).orElse(0d);
+        double gpa = Math.round(((homeworkAvg * 0.4 + examAvg * 0.6) / 25.0) * 100.0) / 100.0;
+
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("totalCredits", totalCredits);
+        map.put("earnedCredits", earnedCredits);
+        map.put("currentSemesterCredits", currentSemesterCredits);
+        map.put("failedCredits", Math.round(failedCredits * 100.0) / 100.0);
+        map.put("gpa", Math.max(0, Math.min(4, gpa)));
+        map.put("creditCompletionRate", Math.round(completionRate * 1000.0) / 1000.0);
+        map.put("source", Map.of(
+                "homeworkAvgFrom", "homework_submission.score",
+                "examAvgFrom", "exam_submission.score",
+                "formula", "credit=(homeworkAvg*0.4+examAvg*0.6)/100*4"
+        ));
+        return map;
+    }
+
+    public Map<String, Object> creditRisk(Long studentId) {
+        Map<String, Object> summary = creditSummary(studentId);
+        double completionRate = ((Number) summary.get("creditCompletionRate")).doubleValue();
+        double failedCredits = ((Number) summary.get("failedCredits")).doubleValue();
+        double failedRatio = Math.round((failedCredits / TOTAL_CREDIT) * 1000.0) / 1000.0;
+        boolean isAtRisk = completionRate < 0.8 || failedRatio > 0.3;
+        String riskReason = completionRate < 0.8 ? "学分完成率低于80%" :
+                failedRatio > 0.3 ? "挂科学分占比偏高" : "学分状态健康";
+        return Map.of(
+                "creditCompletionRate", completionRate,
+                "failedCreditRatio", failedRatio,
+                "isAtRisk", isAtRisk,
+                "riskReason", riskReason
+        );
+    }
+
+    public List<Map<String, Object>> creditTrend(Long studentId) {
+        List<Map<String, Object>> history = activityMapper.studentRiskHistory(studentId);
+        if (history.isEmpty()) {
+            return List.of(Map.of("week", "当前", "credits", creditOf(studentId)));
+        }
+        List<Map<String, Object>> trend = new ArrayList<>();
+        int start = Math.max(0, history.size() - 8);
+        for (int i = start; i < history.size(); i++) {
+            Map<String, Object> row = history.get(i);
+            String detail = String.valueOf(row.get("detailJson"));
+            double credit = parseCredit(detail);
+            String calcDate = String.valueOf(row.get("calcDate"));
+            trend.add(Map.of(
+                    "week", "W" + (trend.size() + 1),
+                    "date", calcDate,
+                    "credits", Math.round(credit * 100.0) / 100.0
+            ));
+        }
+        return trend;
     }
 
     public Map<String, Object> getTasks(Long studentId, Integer pageNum, Integer pageSize) {
@@ -182,4 +246,16 @@ public class StudentService {
     }
 
     public record RiskSnapshot(double credit, double riskScore, RiskLevel riskLevel) {}
+
+    private double parseCredit(String detailJson) {
+        if (detailJson == null || detailJson.isBlank()) return 0;
+        try {
+            Object raw = JSONUtil.parseObj(detailJson).get("credit");
+            if (raw == null) return 0;
+            if (raw instanceof Number n) return n.doubleValue();
+            return Double.parseDouble(raw.toString());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 }
