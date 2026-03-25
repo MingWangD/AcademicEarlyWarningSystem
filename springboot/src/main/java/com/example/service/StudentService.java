@@ -64,6 +64,11 @@ public class StudentService {
         map.put("failedCredits", Math.round(failedCredits * 100.0) / 100.0);
         map.put("gpa", Math.max(0, Math.min(4, gpa)));
         map.put("creditCompletionRate", Math.round(completionRate * 1000.0) / 1000.0);
+        map.put("source", Map.of(
+                "homeworkAvgFrom", "homework_submission.score",
+                "examAvgFrom", "exam_submission.score",
+                "formula", "credit=(homeworkAvg*0.4+examAvg*0.6)/100*4"
+        ));
         return map;
     }
 

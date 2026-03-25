@@ -156,13 +156,16 @@ public class TeacherService {
     }
 
     private RiskLevel applyCreditRules(RiskLevel baseLevel, double completionRate, double failedCreditRatio, double credit) {
-        if (completionRate < 0.7 || failedCreditRatio > 0.3) {
-            return RiskLevel.HIGH;
+        if (credit >= 3.0) {
+            return RiskLevel.LOW;
         }
         if (credit < 2.0) {
             return RiskLevel.HIGH;
         }
-        if (credit < 3.0 || completionRate < 0.8) {
+        if (completionRate < 0.7 || failedCreditRatio > 0.3) {
+            return RiskLevel.HIGH;
+        }
+        if (completionRate < 0.8) {
             return RiskLevel.MEDIUM;
         }
         return baseLevel;
